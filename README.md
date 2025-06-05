@@ -1,2 +1,6 @@
-# project-skillmatch
-project-skillmatch created by GitHub Classroom
+# SkillMatch
+
+### Team Members
+| Name          | Email                         | UTORID      | 
+| ------------- | ------------------------------| ----------- |
+| Muhammad Ibrahim   | muh.ibrahim@mail.utoronto.ca    |  ibrah724 |
