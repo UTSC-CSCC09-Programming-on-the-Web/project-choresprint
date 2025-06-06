@@ -14,12 +14,19 @@ SkillMatch is a web platform that enables users to exchange skills directly with
 ### Additional Requirement of Choice
 - Users chat and match in real-time in order to plan and exchange the skills they desire.
 ### Alpha Version Milestones
+- Signup, login and payment
+- Database setup
 
 ### Beta Version Milestones
+- Search and filter functionality
+- Integrated messaging functionality
+- Profile creation
+
 
 ### Final Version Milestones
-
-
+- Testing completed
+- Polished UI
+- Deployed using Docker
 
 
 
