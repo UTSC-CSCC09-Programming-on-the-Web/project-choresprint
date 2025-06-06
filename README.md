@@ -10,7 +10,7 @@
 SkillMatch is a platform where users can exchange skills that they have with others who own a skill they'd like to learn.
 
 ### Frontend Framework of Choice
-- Angular
+- Vue.js
 ### Additional Requirement of Choice
 - Users chat and match in real-time in order to plan and exchange the skills they desire.
 ### Alpha Version Milestones
