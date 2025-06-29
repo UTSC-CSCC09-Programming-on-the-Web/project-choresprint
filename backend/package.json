@@ -6,7 +6,7 @@
     "express": "^5.1.0"
   },
   "scripts": {
-    "dev": "prisma generate && nodemon --exec ts-node src/index.ts",
+    "dev": "prisma generate && npx prisma migrate dev --name init && nodemon --exec ts-node src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js"
   },

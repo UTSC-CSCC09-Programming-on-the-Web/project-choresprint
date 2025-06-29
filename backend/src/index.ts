@@ -3,6 +3,9 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { prisma } from "./lib/prisma";
 
+import { router as choresRouter } from "./routes/chores-router";
+import { router as housesRouter } from "./routes/houses-router";
+
 dotenv.config();
 const app = express();
 
@@ -25,3 +28,6 @@ prisma
   .catch((err: any) => {
     console.error("❌ Failed to connect to DB:", err);
   });
+
+app.use("/api/chores", choresRouter);
+app.use("/api/houses", housesRouter);
