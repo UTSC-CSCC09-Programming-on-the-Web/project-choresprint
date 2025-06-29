@@ -55,6 +55,7 @@ model Chore {
   id            Int       @id @default(autoincrement())
   title         String
   description   String?
+  referencePhotoUrl String?
   dueDate       DateTime?
   isCompleted   Boolean   @default(false)
 

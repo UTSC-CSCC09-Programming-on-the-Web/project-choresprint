@@ -1,11 +1,40 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../lib/prisma";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+// Create uploads folder if it doesn't exist
+const uploadDir = path.join(__dirname, "../uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
+// Configure multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    cb(null, uniqueName);
+  },
+});
+
+const upload = multer({ storage });
 
 export const router = Router();
 
-router.post("/", async (req, res) => {
+router.post("/", upload.single("file"), async (req, res) => {
   // For now, the user and house IDs are expected to be provided in the request body.
   const { title, description, houseId, points } = req.body;
+
+  if (!title || !houseId) {
+    res.status(400).json({ error: "title and houseId are required." });
+  }
+
+  const photoUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
   try {
     const newChore = await prisma.chore.create({
@@ -14,6 +43,7 @@ router.post("/", async (req, res) => {
         description,
         houseId: Number(houseId),
         points: Number(points),
+        referencePhotoUrl: photoUrl,
       },
     });
     res.status(201).json(newChore);
