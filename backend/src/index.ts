@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { sequelize } from "../config/db";
+import { prisma } from "./lib/prisma";
 
 dotenv.config();
 const app = express();
@@ -15,8 +15,13 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 4000;
 
-sequelize.sync().then(() => {
-  app.listen(PORT, () =>
-    console.log(`Server running at http://localhost:${PORT}`)
-  );
-});
+prisma
+  .$connect()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running at http://localhost:${PORT}`);
+    });
+  })
+  .catch((err: any) => {
+    console.error("❌ Failed to connect to DB:", err);
+  });

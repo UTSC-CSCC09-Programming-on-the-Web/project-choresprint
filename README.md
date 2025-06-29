@@ -31,7 +31,7 @@ The application requires users to sign in via **OAuth 2.0** (Google) and maintai
 
 - **Express.js** backend
 - **PostgreSQL** as main database
-- **Sequelize** ORM for database modeling and queries
+- **Prisma** ORM for database modeling and queries
 
 ---
 
@@ -56,7 +56,7 @@ _Goal: Core backend endpoints and static UI setup_
 
 - Frontend scaffold with routing
 - Express backend with PostgreSQL using Sequelize ORM
-- Database models for User, House, Chore with Sequelize
+- Database models for User, House, Chore with Prisma
 - Implement basic backend REST endpoints: CRUD of User, House, Chore
 - UI for dashboard, chore list, and draft lobby
 - Google OAuth 2.0 login flow
