@@ -88,6 +88,38 @@ router.post("/", createHouseValidator, async (req: Request, res: Response) => {
   }
 });
 
+router.get("/:id", getHouseValidator, async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const house = await prisma.house.findUnique({
+      where: { id: Number(id) },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        _count: {
+          select: { userHouses: true, chores: true },
+        },
+      },
+    });
+
+    if (!house) {
+      res.status(404).json({ error: "House not found" });
+      return;
+    }
+
+    res.json(house);
+  } catch (error) {
+    console.error("Error fetching house:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 router.patch(
   "/:id",
   updateHouseValidator,
@@ -100,6 +132,16 @@ router.patch(
         where: { id: Number(id) },
         data: { name },
       });
+      
+      if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      if (updatedHouse.createdById !== (req.user as any).id) {
+        res.status(403).json({ error: "Forbidden: You do not have permission to update this house." });
+        return;
+      }
       res.json(updatedHouse);
     } catch (error) {
       console.error("Error updating house:", error);
@@ -150,6 +192,25 @@ router.get(
 
       if (!house) {
         res.status(404).json({ error: "House not found" });
+        return;
+      }
+
+      if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const userHouse = await prisma.userHouse.findUnique({
+        where: {
+          userId_houseId: {
+            userId: (req.user as any).id,
+            houseId: house.id,
+          },
+        },
+      });
+
+      if (!userHouse) {
+        res.status(403).json({ error: "You do not have access to this house." });
         return;
       }
 
