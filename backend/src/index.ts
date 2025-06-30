@@ -1,13 +1,25 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
 import { prisma } from "./lib/prisma";
+import passport from "./config/passport";
+
+import { router as choresRouter } from "./routes/chores";
+import { router as housesRouter } from "./routes/houses";
+import { router as authRouter } from "./routes/auth";
 
 dotenv.config();
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    credentials: true, // Important for cookies to work cross-domain
+  })
+);
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/", (req, res) => {
   res.send("Backend running!");
@@ -25,3 +37,8 @@ prisma
   .catch((err: any) => {
     console.error("❌ Failed to connect to DB:", err);
   });
+
+app.use(passport.initialize());
+app.use("/api/chores", choresRouter);
+app.use("/api/houses", housesRouter);
+app.use("/api/auth", authRouter);
