@@ -4,6 +4,8 @@
 <template>
   <nav>
     <router-link to="/dashboard">Dashboard</router-link>
+    <router-link to="/chores">Chores</router-link>"
+    <router-link to="/draft-lobby">Draft Lobby</router-link>
   </nav>
   <router-view />
 </template>
