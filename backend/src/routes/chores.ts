@@ -3,6 +3,7 @@ import { prisma } from "../lib/prisma";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { authMiddleware } from "../middlewares/middleware";
 
 // Create uploads folder if it doesn't exist
 const uploadDir = path.join(__dirname, "../uploads");
@@ -25,6 +26,8 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 export const router = Router();
+
+router.use(authMiddleware); // Apply auth middleware to all routes in this router
 
 router.post("/", upload.single("file"), async (req, res) => {
   // For now, the user and house IDs are expected to be provided in the request body.

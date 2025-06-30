@@ -20,6 +20,7 @@ model User {
   avatarUrl      String?
   provider       String?      // e.g. "google"
   providerId     String?      // external OAuth ID
+  refreshToken   String?
 
   userHouses     UserHouse[]  // join table for many-to-many
   chores         Chore[]      @relation("ChoreAssignee")

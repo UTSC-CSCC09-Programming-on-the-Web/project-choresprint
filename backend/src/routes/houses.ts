@@ -1,7 +1,10 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../lib/prisma";
+import { authMiddleware } from "../middlewares/middleware";
 
 export const router = Router();
+
+router.use(authMiddleware); // Apply auth middleware to all routes in this router
 
 router.get("/", async (req, res) => {
   try {
@@ -13,26 +16,26 @@ router.get("/", async (req, res) => {
     // Get total count for pagination metadata
     const totalCount = await prisma.house.count();
     const totalPages = Math.ceil(totalCount / limit);
-    
+
     // Fetch houses with pagination
     const houses = await prisma.house.findMany({
       skip,
       take: limit,
       orderBy: {
-        createdAt: 'desc'
+        createdAt: "desc",
       },
       include: {
         createdBy: {
           select: {
             id: true,
             name: true,
-            email: true
-          }
+            email: true,
+          },
         },
         _count: {
-          select: { userHouses: true, chores: true }
-        }
-      }
+          select: { userHouses: true, chores: true },
+        },
+      },
     });
 
     // Return paginated results with metadata
@@ -44,8 +47,8 @@ router.get("/", async (req, res) => {
         currentPage: page,
         pageSize: limit,
         hasNext: page < totalPages,
-        hasPrevious: page > 1
-      }
+        hasPrevious: page > 1,
+      },
     });
   } catch (error) {
     console.error("Error fetching houses:", error);
@@ -109,41 +112,48 @@ router.delete("/:id", async (req, res) => {
 
 router.get("/:id/chores", async (req, res) => {
   const { id } = req.params;
-  const { cursor, limit = "10", sortBy = "createdAt", sortDir = "desc" } = req.query;
-  
+  const {
+    cursor,
+    limit = "10",
+    sortBy = "createdAt",
+    sortDir = "desc",
+  } = req.query;
+
   const parsedLimit = Math.min(parseInt(limit as string) || 10, 50); // Cap at 50 items
   const cursorId = cursor ? parseInt(cursor as string) : undefined;
-  
+
   try {
     // Validate house exists
     const house = await prisma.house.findUnique({
       where: { id: Number(id) },
-      select: { id: true }
+      select: { id: true },
     });
-    
+
     if (!house) {
       res.status(404).json({ error: "House not found" });
       return;
     }
 
     // Define query parameters
-    const validatedSortBy = (sortBy as string) === 'createdAt' || (sortBy as string) === 'dueDate' 
-      ? sortBy as string 
-      : 'createdAt';
-    
-    const validatedSortDir = (sortDir as string) === 'asc' || (sortDir as string) === 'desc'
-      ? sortDir as 'asc' | 'desc'
-      : 'desc';
+    const validatedSortBy =
+      (sortBy as string) === "createdAt" || (sortBy as string) === "dueDate"
+        ? (sortBy as string)
+        : "createdAt";
+
+    const validatedSortDir =
+      (sortDir as string) === "asc" || (sortDir as string) === "desc"
+        ? (sortDir as "asc" | "desc")
+        : "desc";
 
     // Prepare query options
     let queryOptions: any = {
-      where: { 
-        houseId: Number(id) 
+      where: {
+        houseId: Number(id),
       },
       take: parsedLimit,
       orderBy: [
         { [validatedSortBy]: validatedSortDir },
-        { id: 'asc' } // Secondary sort by ID to ensure consistent ordering
+        { id: "asc" }, // Secondary sort by ID to ensure consistent ordering
       ],
       include: {
         assignedTo: {
@@ -151,10 +161,10 @@ router.get("/:id/chores", async (req, res) => {
             id: true,
             name: true,
             email: true,
-            avatarUrl: true
-          }
-        }
-      }
+            avatarUrl: true,
+          },
+        },
+      },
     };
 
     // Add cursor pagination if cursor is provided
@@ -162,17 +172,18 @@ router.get("/:id/chores", async (req, res) => {
       queryOptions.cursor = { id: cursorId };
       queryOptions.skip = 1; // Skip the cursor item
     }
-    
+
     // Get chores with cursor pagination
     const chores = await prisma.chore.findMany(queryOptions);
-    
+
     // Get total count of chores for this house
     const totalCount = await prisma.chore.count({
-      where: { houseId: Number(id) }
+      where: { houseId: Number(id) },
     });
-    
+
     // Determine the next cursor
-    const nextCursor = chores.length === parsedLimit ? chores[chores.length - 1].id : null;
+    const nextCursor =
+      chores.length === parsedLimit ? chores[chores.length - 1].id : null;
 
     res.json({
       data: chores,
@@ -180,8 +191,8 @@ router.get("/:id/chores", async (req, res) => {
         totalCount,
         nextCursor,
         hasNextPage: chores.length === parsedLimit,
-        limit: parsedLimit
-      }
+        limit: parsedLimit,
+      },
     });
   } catch (error) {
     console.error("Error fetching chores for house:", error);
