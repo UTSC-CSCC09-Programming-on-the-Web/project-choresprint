@@ -4,6 +4,13 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { authMiddleware } from "../middlewares/middleware";
+import {
+  createChoreValidator,
+  updateChoreValidator,
+  getChoreValidator,
+  deleteChoreValidator,
+  uploadCompletionPhotoValidator,
+} from "../validators/choreValidators";
 
 // Create uploads folder if it doesn't exist
 const uploadDir = path.join(__dirname, "../uploads");
@@ -29,34 +36,39 @@ export const router = Router();
 
 router.use(authMiddleware); // Apply auth middleware to all routes in this router
 
-router.post("/", upload.single("file"), async (req, res) => {
-  // For now, the user and house IDs are expected to be provided in the request body.
-  const { title, description, houseId, points } = req.body;
+router.post(
+  "/",
+  upload.single("file"),
+  createChoreValidator,
+  async (req: Request, res: Response) => {
+    // For now, the user and house IDs are expected to be provided in the request body.
+    const { title, description, houseId, points } = req.body;
 
-  if (!title || !houseId) {
-    res.status(400).json({ error: "title and houseId are required." });
+    if (!title || !houseId) {
+      res.status(400).json({ error: "title and houseId are required." });
+    }
+
+    const photoUrl = req.file ? `/uploads/${req.file.filename}` : null;
+
+    try {
+      const newChore = await prisma.chore.create({
+        data: {
+          title,
+          description,
+          houseId: Number(houseId),
+          points: Number(points),
+          referencePhotoUrl: photoUrl,
+        },
+      });
+      res.status(201).json(newChore);
+    } catch (error) {
+      console.error("Error creating chore:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
   }
+);
 
-  const photoUrl = req.file ? `/uploads/${req.file.filename}` : null;
-
-  try {
-    const newChore = await prisma.chore.create({
-      data: {
-        title,
-        description,
-        houseId: Number(houseId),
-        points: Number(points),
-        referencePhotoUrl: photoUrl,
-      },
-    });
-    res.status(201).json(newChore);
-  } catch (error) {
-    console.error("Error creating chore:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-router.get("/:id", async (req, res) => {
+router.get("/:id", getChoreValidator, async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
@@ -74,36 +86,44 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.patch("/:id", async (req, res) => {
-  const { id } = req.params;
-  const { title, description, dueDate, completed } = req.body;
+router.patch(
+  "/:id",
+  updateChoreValidator,
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { title, description, dueDate, completed } = req.body;
 
-  try {
-    const updatedChore = await prisma.chore.update({
-      where: { id: Number(id) },
-      data: {
-        title,
-        description,
-        dueDate: new Date(dueDate),
-      },
-    });
-    res.json(updatedChore);
-  } catch (error) {
-    console.error("Error updating chore:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    try {
+      const updatedChore = await prisma.chore.update({
+        where: { id: Number(id) },
+        data: {
+          title,
+          description,
+          dueDate: new Date(dueDate),
+        },
+      });
+      res.json(updatedChore);
+    } catch (error) {
+      console.error("Error updating chore:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
   }
-});
+);
 
-router.delete("/:id", async (req, res) => {
-  const { id } = req.params;
+router.delete(
+  "/:id",
+  deleteChoreValidator,
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
 
-  try {
-    await prisma.chore.delete({
-      where: { id: Number(id) },
-    });
-    res.status(204).send();
-  } catch (error) {
-    console.error("Error deleting chore:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    try {
+      await prisma.chore.delete({
+        where: { id: Number(id) },
+      });
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting chore:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
   }
-});
+);

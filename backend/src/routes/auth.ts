@@ -1,8 +1,15 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import passport from "passport";
 import jwt from "jsonwebtoken";
 import { authMiddleware } from "../middlewares/middleware";
 import { prisma } from "../lib/prisma";
+import {
+  loginValidator,
+  signupValidator,
+  refreshTokenValidator,
+  resetPasswordValidator,
+  newPasswordValidator,
+} from "../validators/authValidators";
 
 export const router = express.Router();
 
@@ -60,35 +67,39 @@ router.get("/me", authMiddleware, (req, res) => {
   }
 });
 
-router.post("/refresh", async (req, res) => {
-  const token = req.cookies.refreshToken;
-  if (!token) {
-    res.status(401).json({ error: "Missing refresh token" });
-    return;
-  }
-
-  try {
-    const payload: any = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET!);
-
-    // OPTIONAL: Check if token matches what's in the DB
-    const user = await prisma.user.findUnique({ where: { id: payload.id } });
-    if (!user || user.refreshToken !== token) {
-      res.status(403).json({ error: "Invalid refresh token" });
+router.post(
+  "/refresh",
+  refreshTokenValidator,
+  async (req: Request, res: Response) => {
+    const token = req.cookies.refreshToken;
+    if (!token) {
+      res.status(401).json({ error: "Missing refresh token" });
       return;
     }
-    res.json({
-      accessToken: jwt.sign(
-        { id: user.id, email: user.email },
-        process.env.ACCESS_TOKEN_SECRET!,
-        { expiresIn: "1h" }
-      ),
-    });
-  } catch (err) {
-    res.status(403).json({ error: "Invalid or expired refresh token" });
-  }
-});
 
-router.post("/logout", async (req, res) => {
+    try {
+      const payload: any = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET!);
+
+      // OPTIONAL: Check if token matches what's in the DB
+      const user = await prisma.user.findUnique({ where: { id: payload.id } });
+      if (!user || user.refreshToken !== token) {
+        res.status(403).json({ error: "Invalid refresh token" });
+        return;
+      }
+      res.json({
+        accessToken: jwt.sign(
+          { id: user.id, email: user.email },
+          process.env.ACCESS_TOKEN_SECRET!,
+          { expiresIn: "1h" }
+        ),
+      });
+    } catch (err) {
+      res.status(403).json({ error: "Invalid or expired refresh token" });
+    }
+  }
+);
+
+router.post("/logout", async (req: Request, res: Response) => {
   const token = req.cookies.refreshToken;
   if (token) {
     // OPTIONAL: Invalidate in DB

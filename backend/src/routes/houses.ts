@@ -1,12 +1,20 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { authMiddleware } from "../middlewares/middleware";
+import {
+  createHouseValidator,
+  updateHouseValidator,
+  deleteHouseValidator,
+  getHouseValidator,
+  getHousesValidator,
+  getHouseChoresValidator,
+} from "../validators/houseValidators";
 
 export const router = Router();
 
 router.use(authMiddleware); // Apply auth middleware to all routes in this router
 
-router.get("/", async (req, res) => {
+router.get("/", getHousesValidator, async (req: Request, res: Response) => {
   try {
     // Parse pagination parameters from query string
     const page = parseInt(req.query.page as string) || 1;
@@ -56,7 +64,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", createHouseValidator, async (req: Request, res: Response) => {
   // For now, the user ID is expected to be provided in the request body.
   const { name, userId } = req.body;
 
@@ -80,122 +88,134 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.patch("/:id", async (req, res) => {
-  const { id } = req.params;
-  const { name } = req.body;
+router.patch(
+  "/:id",
+  updateHouseValidator,
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { name } = req.body;
 
-  try {
-    const updatedHouse = await prisma.house.update({
-      where: { id: Number(id) },
-      data: { name },
-    });
-    res.json(updatedHouse);
-  } catch (error) {
-    console.error("Error updating house:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-router.delete("/:id", async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    await prisma.house.delete({
-      where: { id: Number(id) },
-    });
-    res.status(204).send();
-  } catch (error) {
-    console.error("Error deleting house:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-router.get("/:id/chores", async (req, res) => {
-  const { id } = req.params;
-  const {
-    cursor,
-    limit = "10",
-    sortBy = "createdAt",
-    sortDir = "desc",
-  } = req.query;
-
-  const parsedLimit = Math.min(parseInt(limit as string) || 10, 50); // Cap at 50 items
-  const cursorId = cursor ? parseInt(cursor as string) : undefined;
-
-  try {
-    // Validate house exists
-    const house = await prisma.house.findUnique({
-      where: { id: Number(id) },
-      select: { id: true },
-    });
-
-    if (!house) {
-      res.status(404).json({ error: "House not found" });
-      return;
+    try {
+      const updatedHouse = await prisma.house.update({
+        where: { id: Number(id) },
+        data: { name },
+      });
+      res.json(updatedHouse);
+    } catch (error) {
+      console.error("Error updating house:", error);
+      res.status(500).json({ error: "Internal Server Error" });
     }
+  }
+);
 
-    // Define query parameters
-    const validatedSortBy =
-      (sortBy as string) === "createdAt" || (sortBy as string) === "dueDate"
-        ? (sortBy as string)
-        : "createdAt";
+router.delete(
+  "/:id",
+  deleteHouseValidator,
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
 
-    const validatedSortDir =
-      (sortDir as string) === "asc" || (sortDir as string) === "desc"
-        ? (sortDir as "asc" | "desc")
-        : "desc";
+    try {
+      await prisma.house.delete({
+        where: { id: Number(id) },
+      });
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting house:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
 
-    // Prepare query options
-    let queryOptions: any = {
-      where: {
-        houseId: Number(id),
-      },
-      take: parsedLimit,
-      orderBy: [
-        { [validatedSortBy]: validatedSortDir },
-        { id: "asc" }, // Secondary sort by ID to ensure consistent ordering
-      ],
-      include: {
-        assignedTo: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatarUrl: true,
+router.get(
+  "/:id/chores",
+  getHouseChoresValidator,
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const {
+      cursor,
+      limit = "10",
+      sortBy = "createdAt",
+      sortDir = "desc",
+    } = req.query;
+
+    const parsedLimit = Math.min(parseInt(limit as string) || 10, 50); // Cap at 50 items
+    const cursorId = cursor ? parseInt(cursor as string) : undefined;
+
+    try {
+      // Validate house exists
+      const house = await prisma.house.findUnique({
+        where: { id: Number(id) },
+        select: { id: true },
+      });
+
+      if (!house) {
+        res.status(404).json({ error: "House not found" });
+        return;
+      }
+
+      // Define query parameters
+      const validatedSortBy =
+        (sortBy as string) === "createdAt" || (sortBy as string) === "dueDate"
+          ? (sortBy as string)
+          : "createdAt";
+
+      const validatedSortDir =
+        (sortDir as string) === "asc" || (sortDir as string) === "desc"
+          ? (sortDir as "asc" | "desc")
+          : "desc";
+
+      // Prepare query options
+      let queryOptions: any = {
+        where: {
+          houseId: Number(id),
+        },
+        take: parsedLimit,
+        orderBy: [
+          { [validatedSortBy]: validatedSortDir },
+          { id: "asc" }, // Secondary sort by ID to ensure consistent ordering
+        ],
+        include: {
+          assignedTo: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatarUrl: true,
+            },
           },
         },
-      },
-    };
+      };
 
-    // Add cursor pagination if cursor is provided
-    if (cursorId) {
-      queryOptions.cursor = { id: cursorId };
-      queryOptions.skip = 1; // Skip the cursor item
+      // Add cursor pagination if cursor is provided
+      if (cursorId) {
+        queryOptions.cursor = { id: cursorId };
+        queryOptions.skip = 1; // Skip the cursor item
+      }
+
+      // Get chores with cursor pagination
+      const chores = await prisma.chore.findMany(queryOptions);
+
+      // Get total count of chores for this house
+      const totalCount = await prisma.chore.count({
+        where: { houseId: Number(id) },
+      });
+
+      // Determine the next cursor
+      const nextCursor =
+        chores.length === parsedLimit ? chores[chores.length - 1].id : null;
+
+      res.json({
+        data: chores,
+        pagination: {
+          totalCount,
+          nextCursor,
+          hasNextPage: chores.length === parsedLimit,
+          limit: parsedLimit,
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching chores for house:", error);
+      res.status(500).json({ error: "Internal Server Error" });
     }
-
-    // Get chores with cursor pagination
-    const chores = await prisma.chore.findMany(queryOptions);
-
-    // Get total count of chores for this house
-    const totalCount = await prisma.chore.count({
-      where: { houseId: Number(id) },
-    });
-
-    // Determine the next cursor
-    const nextCursor =
-      chores.length === parsedLimit ? chores[chores.length - 1].id : null;
-
-    res.json({
-      data: chores,
-      pagination: {
-        totalCount,
-        nextCursor,
-        hasNextPage: chores.length === parsedLimit,
-        limit: parsedLimit,
-      },
-    });
-  } catch (error) {
-    console.error("Error fetching chores for house:", error);
-    res.status(500).json({ error: "Internal Server Error" });
   }
-});
+);
