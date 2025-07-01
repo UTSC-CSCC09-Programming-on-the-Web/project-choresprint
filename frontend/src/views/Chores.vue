@@ -1,93 +1,82 @@
+<script setup lang="ts">
+import ChoreCard from '../components/ChoreCard.vue'
+
+interface House {
+  id: number
+  name: string
+}
+
+interface Chore {
+  id: number
+  title: string
+  points: number
+}
+
+// sample house from the dashboard
+const houses: House[] = [
+  { id: 1, name: 'Cottage' }
+]
+
+// sample data for chores
+const chores: Chore[] = [
+  { id: 1, title: 'Take out trash', points: 5 },
+  { id: 2, title: 'Clean kitchen', points: 8 },
+  { id: 3, title: 'Mow lawn', points: 10 }
+]
+</script>
+
 <template>
-  <div>
+  <div class="chores-page">
     <h1>Chores</h1>
 
-    <div>
-      <label>
+    <section class="house-section">
+      <label class="house-label">
         Select House:
-        <select v-model="selectedHouseId">
-          <option disabled value="">-- Choose --</option>
-          <option v-for="h in houses" :value="h.id" :key="h.id">
-            {{ h.name }}
-          </option>
+        <select disabled>
+          <option>{{ houses[0].name }}</option>
         </select>
       </label>
-    </div>
+    </section>
 
-    <div v-if="selectedHouseId">
-      <h2>Chores for House {{ selectedHouseId }}</h2>
-      <form @submit.prevent="createChore">
-        <input v-model="newChoreTitle" placeholder="Title" />
-        <input v-model.number="newChorePoints" placeholder="Points" type="number" />
-        <button type="submit">Add Chore</button>
-      </form>
-      <ul>
-        <li v-for="chore in chores" :key="chore.id">
-          {{ chore.title }} - {{ chore.points }} points
-        </li>
+    <section class="list-section">
+      <h2>Chores for House</h2>
+      <ul class="chore-list">
+        <ChoreCard
+          v-for="c in chores"
+          :key="c.id"
+          :title="c.title"
+          :points="c.points"
+        />
       </ul>
-    </div>
+    </section>
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
-
-interface House { id: number; name: string }
-interface Chore { id: number; title: string; points: number }
-
-const token = localStorage.getItem('accessToken') || ''
-
-// refs to hold house and chore data
-const houses = ref<House[]>([])
-const selectedHouseId = ref('')
-const chores = ref<Chore[]>([])
-const newChoreTitle = ref('')
-const newChorePoints = ref<number | null>(null) // allow null for points input
-
-// fetch houses
-const fetchHouses = async () => {
-  const res = await fetch('/api/houses', {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  if (res.ok) {
-    const data = await res.json()
-    houses.value = data.data
-  }
+<style scoped>
+.chores-page {
+  max-width: 600px;
+  margin: 0 auto;
 }
-
-// fetch chores for the selected house
-const fetchChores = async () => {
-  if (!selectedHouseId.value) return
-  const res = await fetch(`/api/houses/${selectedHouseId.value}/chores`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  if (res.ok) {
-    const data = await res.json()
-    chores.value = data.data
-  }
+.house-section,
+.list-section {
+  margin-top: 2rem;
 }
-
-// create a new chore
-const createChore = async () => {
-  if (!selectedHouseId.value || !newChoreTitle.value || newChorePoints.value === null) return
-  await fetch('/api/chores', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      title: newChoreTitle.value,
-      houseId: selectedHouseId.value,
-      points: newChorePoints.value,
-    }),
-  })
-  newChoreTitle.value = ''
-  newChorePoints.value = null
-  fetchChores()
+.house-label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 500;
 }
-
-onMounted(fetchHouses) // fetch houses on mount
-watch(selectedHouseId, fetchChores) // fetch chores when selected house changes
-</script>
+select {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+}
+.chore-list {
+  list-style: none;
+  padding: 0;
+}
+.note {
+  margin-top: 1rem;
+  font-style: italic;
+  color: #6c6c6c;
+}
+</style>

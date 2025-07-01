@@ -48,6 +48,6 @@ const houses: House[] = [
 .note {
   margin-top: 1rem;
   font-style: italic;
-  color: #666;
+  color: #686868;
 }
 </style>

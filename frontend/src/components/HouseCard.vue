@@ -16,7 +16,7 @@ const props = defineProps<{ name: string; members: number; chores: number }>()
   margin-bottom: 1rem;
   padding: 1rem;
   background-color: #f9f9f9;
-  color: #333;
+  color: #2e2e2e;
   border-radius: 8px;
   display: flex;
   justify-content: space-between;
