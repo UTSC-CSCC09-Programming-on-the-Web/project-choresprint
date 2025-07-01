@@ -14,60 +14,74 @@ datasource db {
 }
 
 model User {
-  id             Int          @id @default(autoincrement())
-  email          String       @unique
-  name           String?
-  avatarUrl      String?
-  provider       String?      // e.g. "google"
-  providerId     String?      // external OAuth ID
-  refreshToken   String?
+  id           Int     @id @default(autoincrement())
+  email        String  @unique
+  name         String?
+  avatarUrl    String?
+  provider     String? // e.g. "google"
+  providerId   String? // external OAuth ID
+  refreshToken String?
 
-  userHouses     UserHouse[]  // join table for many-to-many
-  chores         Chore[]      @relation("ChoreAssignee")
-  createdHouses  House[]      @relation("HouseCreatedBy")
-  createdAt      DateTime     @default(now())
+  userHouses    UserHouse[] // join table for many-to-many
+  chores        Chore[]      @relation("ChoreAssignee")
+  createdHouses House[]      @relation("HouseCreatedBy")
+  createdAt     DateTime     @default(now())
+  Invitation    Invitation[]
 }
 
 model House {
-  id            Int          @id @default(autoincrement())
-  name          String
-  createdBy     User         @relation("HouseCreatedBy", fields: [createdById], references: [id])
-  createdById   Int
+  id          Int    @id @default(autoincrement())
+  name        String
+  createdBy   User   @relation("HouseCreatedBy", fields: [createdById], references: [id])
+  createdById Int
 
-  userHouses    UserHouse[]  // join table for many-to-many
-  chores        Chore[]
-  createdAt     DateTime     @default(now())
+  userHouses UserHouse[] // join table for many-to-many
+  chores     Chore[]
+  createdAt  DateTime     @default(now())
+  Invitation Invitation[]
 }
 
 model UserHouse {
-  user     User   @relation(fields: [userId], references: [id])
-  userId   Int
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
 
-  house    House  @relation(fields: [houseId], references: [id])
-  houseId  Int
+  house   House @relation(fields: [houseId], references: [id])
+  houseId Int
 
-  points   Int    @default(0)
+  points   Int      @default(0)
   joinedAt DateTime @default(now())
 
   @@id([userId, houseId])
 }
 
 model Chore {
-  id            Int       @id @default(autoincrement())
-  title         String
-  description   String?
+  id                Int       @id @default(autoincrement())
+  title             String
+  description       String?
   referencePhotoUrl String?
-  dueDate       DateTime?
-  isCompleted   Boolean   @default(false)
+  dueDate           DateTime?
+  isCompleted       Boolean   @default(false)
 
-  assignedTo    User?     @relation("ChoreAssignee", fields: [assignedToId], references: [id])
-  assignedToId  Int?
+  assignedTo   User? @relation("ChoreAssignee", fields: [assignedToId], references: [id])
+  assignedToId Int?
 
-  house         House     @relation(fields: [houseId], references: [id])
-  houseId       Int
+  house   House @relation(fields: [houseId], references: [id])
+  houseId Int
 
-  photoUrl      String?   // for uploaded verification photo
-  verified      Boolean   @default(false) // AI decision
-  points        Int       @default(10)
-  createdAt     DateTime  @default(now())
+  photoUrl  String? // for uploaded verification photo
+  verified  Boolean  @default(false) // AI decision
+  points    Int      @default(10)
+  createdAt DateTime @default(now())
+}
+
+model Invitation {
+  id          Int       @id @default(autoincrement())
+  code        String    @unique // UUID or random token
+  house       House     @relation(fields: [houseId], references: [id])
+  houseId     Int
+  invitedBy   User      @relation(fields: [invitedById], references: [id])
+  invitedById Int
+  used        Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  usedAt      DateTime?
 }

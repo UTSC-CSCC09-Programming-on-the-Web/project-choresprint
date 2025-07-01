@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../lib/prisma";
+import { v4 as uuidv4 } from "uuid";
 import { authMiddleware } from "../middlewares/middleware";
 import {
   createHouseValidator,
@@ -65,19 +66,24 @@ router.get("/", getHousesValidator, async (req: Request, res: Response) => {
 });
 
 router.post("/", createHouseValidator, async (req: Request, res: Response) => {
-  // For now, the user ID is expected to be provided in the request body.
-  const { name, userId } = req.body;
+  const { name } = req.body;
 
   try {
+
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
     const newHouse = await prisma.house.create({
       data: {
         name,
-        createdById: Number(userId),
+        createdById: (req.user as any).id,
       },
     });
     await prisma.userHouse.create({
       data: {
-        userId: Number(userId),
+        userId: (req.user as any).id,
         houseId: newHouse.id,
       },
     });
@@ -132,14 +138,19 @@ router.patch(
         where: { id: Number(id) },
         data: { name },
       });
-      
+
       if (!req.user) {
         res.status(401).json({ error: "Unauthorized" });
         return;
       }
 
       if (updatedHouse.createdById !== (req.user as any).id) {
-        res.status(403).json({ error: "Forbidden: You do not have permission to update this house." });
+        res
+          .status(403)
+          .json({
+            error:
+              "Forbidden: You do not have permission to update this house.",
+          });
         return;
       }
       res.json(updatedHouse);
@@ -210,7 +221,9 @@ router.get(
       });
 
       if (!userHouse) {
-        res.status(403).json({ error: "You do not have access to this house." });
+        res
+          .status(403)
+          .json({ error: "You do not have access to this house." });
         return;
       }
 
@@ -280,3 +293,121 @@ router.get(
     }
   }
 );
+
+router.post("/:id/invitations", async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const house = await prisma.house.findUnique({
+      where: { id: Number(id) },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!house) {
+      res.status(404).json({ error: "House not found" });
+      return;
+    }
+
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    if (house.createdById !== (req.user as any).id) {
+      res
+        .status(403)
+        .json({
+          error:
+            "Forbidden: You do not have permission to invite users to this house.",
+        });
+      return;
+    }
+
+    const code = uuidv4();
+
+    const invitation = await prisma.invitation.create({
+      data: {
+        code,
+        houseId: Number(id),
+        invitedById: (req.user as any).id,
+      },
+    });
+
+    res.json({
+      code,
+      link: `${process.env.FRONTEND_URL}/join/${code}`,
+    });
+  } catch (error) {
+    console.error("Error handling house invitation:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/invitations/:code/use", async (req: Request, res: Response) => {
+  const { code } = req.params;
+
+  try {
+    const invitation = await prisma.invitation.findUnique({
+      where: { code },
+      include: {
+        house: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!invitation) {
+      res.status(404).json({ error: "Invitation not found" });
+      return;
+    }
+
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    // Check if user is already a member of the house
+    const existingMembership = await prisma.userHouse.findUnique({
+      where: {
+        userId_houseId: {
+          userId: (req.user as any).id,
+          houseId: invitation.houseId,
+        },
+      },
+    });
+
+    if (existingMembership) {
+      res
+        .status(400)
+        .json({ error: "You are already a member of this house." });
+      return;
+    }
+
+    // Add user to the house
+    await prisma.userHouse.create({
+      data: {
+        userId: (req.user as any).id,
+        houseId: invitation.houseId,
+      },
+    });
+
+    res.json({
+      message: `You have successfully joined the house "${invitation.house.name}".`,
+      houseId: invitation.house.id,
+    });
+  } catch (error) {
+    console.error("Error using invitation code:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
