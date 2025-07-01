@@ -10,7 +10,8 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.1",
     "passport": "^0.7.0",
-    "passport-google-oauth20": "^2.0.0"
+    "passport-google-oauth20": "^2.0.0",
+    "uuid": "^11.1.0"
   },
   "scripts": {
     "dev": "prisma generate && npx prisma migrate dev --name init && nodemon --exec ts-node src/index.ts",

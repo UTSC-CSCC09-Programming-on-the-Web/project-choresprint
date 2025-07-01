@@ -8,7 +8,7 @@ export const authMiddleware: RequestHandler = (
   next: NextFunction
 ): void => {
   const authHeader = req.headers.authorization;
-  
+
   if (!authHeader) {
     res.status(401).json({ error: "Unauthorized" });
     return; // Return void instead of the response
@@ -22,10 +22,11 @@ export const authMiddleware: RequestHandler = (
 
   try {
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!);
+
     (req as any).user = decoded;
     next();
   } catch (err) {
     res.status(401).json({ error: "Invalid token" });
     return; // Return void instead of the response
   }
-}
+};

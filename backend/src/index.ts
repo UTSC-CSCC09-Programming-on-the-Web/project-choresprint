@@ -8,6 +8,7 @@ import passport from "./config/passport";
 import { router as choresRouter } from "./routes/chores";
 import { router as housesRouter } from "./routes/houses";
 import { router as authRouter } from "./routes/auth";
+import { router as usersRouter } from "./routes/users";
 
 dotenv.config();
 const app = express();
@@ -42,3 +43,4 @@ app.use(passport.initialize());
 app.use("/api/chores", choresRouter);
 app.use("/api/houses", housesRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/users", usersRouter);

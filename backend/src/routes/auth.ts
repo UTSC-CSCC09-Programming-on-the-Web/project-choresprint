@@ -46,6 +46,14 @@ router.get(
       data: { refreshToken },
     });
 
+    const safeUser = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatarUrl: user.avatarUrl
+      // Include other non-sensitive fields here
+    };
+
     // Send token to frontend (you can use a redirect + query param too)
     res
       .cookie("refreshToken", refreshToken, {
@@ -54,7 +62,7 @@ router.get(
         sameSite: "strict",
         path: "/api/auth/refresh",
       })
-      .json({ accessToken, user });
+      .json({ accessToken, safeUser });
   }
 );
 

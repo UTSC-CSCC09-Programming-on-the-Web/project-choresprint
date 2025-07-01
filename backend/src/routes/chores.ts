@@ -79,6 +79,25 @@ router.get("/:id", getChoreValidator, async (req: Request, res: Response) => {
       res.status(404).json({ error: "Chore not found" });
       return;
     }
+
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const userHouse = await prisma.userHouse.findUnique({
+      where: {
+        userId_houseId: {
+          userId: (req.user as any).id,
+          houseId: chore.houseId,
+        },
+      },
+    });
+
+    if (!userHouse) {
+      res.status(403).json({ error: "You do not have access to this chore." });
+      return;
+    }
     res.json(chore);
   } catch (error) {
     console.error("Error fetching chore:", error);
@@ -102,6 +121,26 @@ router.patch(
           dueDate: new Date(dueDate),
         },
       });
+      if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const userHouse = await prisma.userHouse.findUnique({
+        where: {
+          userId_houseId: {
+            userId: (req.user as any).id,
+            houseId: updatedChore.houseId,
+          },
+        },
+      });
+
+      if (!userHouse) {
+        res
+          .status(403)
+          .json({ error: "You do not have access to this chore." });
+        return;
+      }
       res.json(updatedChore);
     } catch (error) {
       console.error("Error updating chore:", error);
@@ -117,9 +156,29 @@ router.delete(
     const { id } = req.params;
 
     try {
-      await prisma.chore.delete({
+      const deletedChore = await prisma.chore.delete({
         where: { id: Number(id) },
       });
+      if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const userHouse = await prisma.userHouse.findUnique({
+        where: {
+          userId_houseId: {
+            userId: (req.user as any).id,
+            houseId: deletedChore.houseId,
+          },
+        },
+      });
+
+      if (!userHouse) {
+        res
+          .status(403)
+          .json({ error: "You do not have access to this chore." });
+        return;
+      }
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting chore:", error);
