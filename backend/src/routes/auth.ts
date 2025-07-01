@@ -50,7 +50,7 @@ router.get(
       id: user.id,
       email: user.email,
       name: user.name,
-      avatarUrl: user.avatarUrl
+      avatarUrl: user.avatarUrl,
       // Include other non-sensitive fields here
     };
 
@@ -58,20 +58,47 @@ router.get(
     res
       .cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production", // false in development
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // lax in development
         path: "/api/auth/refresh",
       })
-      .json({ accessToken, safeUser });
+      .cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // false in development
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // lax in development
+        maxAge: 3600000,
+      })
+      //   .json({ accessToken, safeUser })
+      .redirect(process.env.CLIENT_URL! || "http://localhost:5173"); // Redirect to frontend URL
   }
 );
 
 // (Optional) Get current user session
-router.get("/me", authMiddleware, (req, res) => {
-  if (req.isAuthenticated()) {
-    res.json(req.user);
-  } else {
-    res.status(401).json({ error: "Not authenticated" });
+router.get("/me", authMiddleware, async (req, res) => {
+  try {
+    // If authMiddleware passed, we have a valid user
+    const userId = (req.user as any).id;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        avatarUrl: true,
+        // Add other fields you want to return
+      },
+    });
+
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error("Error in /me endpoint:", error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
@@ -119,5 +146,6 @@ router.post("/logout", async (req: Request, res: Response) => {
   }
 
   res.clearCookie("refreshToken", { path: "/api/auth/refresh" });
+  res.clearCookie("accessToken");
   res.json({ message: "Logged out" });
 });

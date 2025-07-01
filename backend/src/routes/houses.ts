@@ -75,6 +75,23 @@ router.post("/", createHouseValidator, async (req: Request, res: Response) => {
       return;
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: (req.user as any).id },
+      include: { userHouses: true },
+    });
+
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    if (user.userHouses.length > 0) {
+      res
+        .status(400)
+        .json({ error: "You are already a member of a house." });
+      return;
+    }
+
     const newHouse = await prisma.house.create({
       data: {
         name,
@@ -378,19 +395,20 @@ router.post("/invitations/:code/use", async (req: Request, res: Response) => {
     }
 
     // Check if user is already a member of the house
-    const existingMembership = await prisma.userHouse.findUnique({
-      where: {
-        userId_houseId: {
-          userId: (req.user as any).id,
-          houseId: invitation.houseId,
-        },
-      },
+    const user = await prisma.user.findUnique({
+      where: { id: (req.user as any).id },
+      include: { userHouses: true },
     });
 
-    if (existingMembership) {
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    if (user.userHouses.length > 0) {
       res
         .status(400)
-        .json({ error: "You are already a member of this house." });
+        .json({ error: "You are already a member of a house." });
       return;
     }
 
