@@ -177,11 +177,33 @@ router.delete(
   deleteHouseValidator,
   async (req: Request, res: Response) => {
     const { id } = req.params;
-
     try {
-      await prisma.house.delete({
+      const house = await prisma.house.findUnique({
         where: { id: Number(id) },
+        select: { id: true, createdById: true },
       });
+
+      if (!house) {
+        res.status(404).json({ error: "House not found" }); // raise 404 not found
+        return;
+      }
+
+      if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" }); // raise 401 unauthorized
+        return;
+      }
+
+      if (house.createdById !== (req.user as any).id) {
+        res.status(403).json({ // raise 403 forbidden
+          error: "Forbidden: You do not have permission to delete this house.",
+        });
+        return;
+      }
+      
+      await prisma.invitation.deleteMany({ where: { houseId: house.id } });
+      await prisma.chore.deleteMany({ where: { houseId: house.id } });
+      await prisma.userHouse.deleteMany({ where: { houseId: house.id } });
+      await prisma.house.delete({ where: { id: house.id } });
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting house:", error);
