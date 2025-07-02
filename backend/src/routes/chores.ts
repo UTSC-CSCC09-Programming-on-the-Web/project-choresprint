@@ -42,7 +42,7 @@ router.post(
   createChoreValidator,
   async (req: Request, res: Response) => {
     // For now, the user and house IDs are expected to be provided in the request body.
-    const { title, description, houseId, points } = req.body;
+    const { title, description, houseId, points, dueDate, assignedToId } = req.body;
 
     if (!title || !houseId) {
       res.status(400).json({ error: "title and houseId are required." });
@@ -58,6 +58,8 @@ router.post(
           houseId: Number(houseId),
           points: Number(points),
           referencePhotoUrl: photoUrl,
+          dueDate: dueDate ? new Date(dueDate) : undefined,
+          assignedToId: assignedToId ? Number(assignedToId) : undefined,
         },
       });
       res.status(201).json(newChore);

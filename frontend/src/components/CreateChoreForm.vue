@@ -77,7 +77,7 @@
           <div class="select-wrapper">
             <select
               id="chore-assigned-to"
-              v-model="form.assignedTo"
+              v-model="form.assignedToId"
               class="form-select"
             >
               <option value="">Anyone</option>
@@ -189,7 +189,7 @@ const form = ref({
   description: "",
   points: 10,
   dueDate: "",
-  assignedTo: "",
+  assignedToId: "",
 });
 
 const referenceImage = ref<File | null>(null);
@@ -269,6 +269,10 @@ const handleSubmit = async () => {
       formData.append("dueDate", form.value.dueDate);
     }
 
+    if (form.value.assignedToId) {
+      formData.append("assignedToId", String(form.value.assignedToId));
+    }
+
     if (form.value.assignedTo) {
       formData.append("assignedTo", form.value.assignedTo);
     }
@@ -287,7 +291,7 @@ const handleSubmit = async () => {
       description: "",
       points: 10,
       dueDate: "",
-      assignedTo: "",
+      assignedToId: "",
     };
     removeImage();
     success.value = true;
