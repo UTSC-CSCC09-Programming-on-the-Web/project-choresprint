@@ -69,7 +69,6 @@ router.post("/", createHouseValidator, async (req: Request, res: Response) => {
   const { name } = req.body;
 
   try {
-
     if (!req.user) {
       res.status(401).json({ error: "Unauthorized" });
       return;
@@ -86,9 +85,7 @@ router.post("/", createHouseValidator, async (req: Request, res: Response) => {
     }
 
     if (user.userHouses.length > 0) {
-      res
-        .status(400)
-        .json({ error: "You are already a member of a house." });
+      res.status(400).json({ error: "You are already a member of a house." });
       return;
     }
 
@@ -162,12 +159,9 @@ router.patch(
       }
 
       if (updatedHouse.createdById !== (req.user as any).id) {
-        res
-          .status(403)
-          .json({
-            error:
-              "Forbidden: You do not have permission to update this house.",
-          });
+        res.status(403).json({
+          error: "Forbidden: You do not have permission to update this house.",
+        });
         return;
       }
       res.json(updatedHouse);
@@ -206,6 +200,7 @@ router.get(
       limit = "10",
       sortBy = "createdAt",
       sortDir = "desc",
+      assignedTo,
     } = req.query;
 
     const parsedLimit = Math.min(parseInt(limit as string) || 10, 50); // Cap at 50 items
@@ -255,11 +250,19 @@ router.get(
           ? (sortDir as "asc" | "desc")
           : "desc";
 
+      // Prepare where clause with filters
+      const whereClause: any = {
+        houseId: Number(id),
+      };
+
+      // Add assignedTo filter if provided
+      if (assignedTo) {
+        whereClause.assignedToId = Number(assignedTo);
+      }
+
       // Prepare query options
       let queryOptions: any = {
-        where: {
-          houseId: Number(id),
-        },
+        where: whereClause,
         take: parsedLimit,
         orderBy: [
           { [validatedSortBy]: validatedSortDir },
@@ -286,9 +289,9 @@ router.get(
       // Get chores with cursor pagination
       const chores = await prisma.chore.findMany(queryOptions);
 
-      // Get total count of chores for this house
+      // Get total count of chores for this house with the same filters
       const totalCount = await prisma.chore.count({
-        where: { houseId: Number(id) },
+        where: whereClause,
       });
 
       // Determine the next cursor
@@ -339,14 +342,16 @@ router.post("/:id/invitations", async (req: Request, res: Response) => {
     }
 
     if (house.createdById !== (req.user as any).id) {
-      res
-        .status(403)
-        .json({
-          error:
-            "Forbidden: You do not have permission to invite users to this house.",
-        });
+      res.status(403).json({
+        error:
+          "Forbidden: You do not have permission to invite users to this house.",
+      });
       return;
     }
+
+    await prisma.invitation.deleteMany({
+      where: { houseId: Number(id) },
+    });
 
     const code = uuidv4();
 
@@ -406,9 +411,7 @@ router.post("/invitations/:code/use", async (req: Request, res: Response) => {
     }
 
     if (user.userHouses.length > 0) {
-      res
-        .status(400)
-        .json({ error: "You are already a member of a house." });
+      res.status(400).json({ error: "You are already a member of a house." });
       return;
     }
 
@@ -426,6 +429,123 @@ router.post("/invitations/:code/use", async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error using invitation code:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.get("/:id/users", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const skip = (page - 1) * limit;
+
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const userHouse = await prisma.userHouse.findUnique({
+      where: {
+        userId_houseId: {
+          userId: (req.user as any).id,
+          houseId: Number(id),
+        },
+      },
+    });
+
+    if (!userHouse) {
+      res.status(403).json({ error: "You do not have access to this house." });
+      return;
+    }
+
+    // Get total count for pagination metadata
+    const totalCount = await prisma.userHouse.count({
+      where: { houseId: Number(id) },
+    });
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    const users = await prisma.userHouse.findMany({
+      where: { houseId: Number(id) },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatarUrl: true,
+          },
+        },
+      },
+      skip,
+      take: limit,
+      orderBy: {
+        points: "desc",
+      },
+    });
+
+    res.json({
+      data: users.map((uh) => {
+        return { ...uh.user, points: uh.points };
+      }),
+      pagination: {
+        totalCount,
+        totalPages,
+        currentPage: page,
+        pageSize: limit,
+        hasNext: page < totalPages,
+        hasPrevious: page > 1,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching house users:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.delete("/:id/leave", async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const userHouse = await prisma.userHouse.findUnique({
+      where: {
+        userId_houseId: {
+          userId: (req.user as any).id,
+          houseId: Number(id),
+        },
+      },
+    });
+
+    if (!userHouse) {
+      res.status(403).json({ error: "You do not have access to this house." });
+      return;
+    }
+
+    await prisma.userHouse.delete({
+      where: {
+        userId_houseId: {
+          userId: (req.user as any).id,
+          houseId: Number(id),
+        },
+      },
+    });
+
+    await prisma.chore.deleteMany({
+      where: {
+        houseId: Number(id),
+        assignedToId: (req.user as any).id,
+      },
+    });
+
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error leaving house:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });

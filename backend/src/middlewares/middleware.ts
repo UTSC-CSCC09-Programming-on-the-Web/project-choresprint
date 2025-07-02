@@ -6,7 +6,6 @@ export const authMiddleware: RequestHandler = (
   res: Response,
   next: NextFunction
 ): void => {
-  console.log(req.cookies.accessToken);
   const token =
     req.cookies.accessToken || req.headers.authorization?.split(" ")[1];
 

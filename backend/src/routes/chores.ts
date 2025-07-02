@@ -110,17 +110,26 @@ router.patch(
   updateChoreValidator,
   async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { title, description, dueDate, completed } = req.body;
+    const { title, description, dueDate, completed, assignedToId } = req.body;
 
     try {
-      const updatedChore = await prisma.chore.update({
+      const chore = await prisma.chore.findUnique({
         where: { id: Number(id) },
-        data: {
-          title,
-          description,
-          dueDate: new Date(dueDate),
-        },
       });
+
+      if (!chore) {
+        res.status(404).json({ error: "Chore not found" });
+        return;
+      }
+
+      if (!chore.assignedToId && completed) {
+        res.status(400).json({
+          error:
+            "Cannot mark a chore as completed if it is not assigned to anyone.",
+        });
+        return;
+      }
+
       if (!req.user) {
         res.status(401).json({ error: "Unauthorized" });
         return;
@@ -130,7 +139,7 @@ router.patch(
         where: {
           userId_houseId: {
             userId: (req.user as any).id,
-            houseId: updatedChore.houseId,
+            houseId: chore.houseId,
           },
         },
       });
@@ -140,6 +149,33 @@ router.patch(
           .status(403)
           .json({ error: "You do not have access to this chore." });
         return;
+      }
+      const updatedChore = await prisma.chore.update({
+        where: { id: Number(id) },
+        data: {
+          title: title || chore.title,
+          description: description || chore.description,
+          dueDate: dueDate ? new Date(dueDate) : chore.dueDate,
+          isCompleted: completed,
+          assignedToId: assignedToId
+            ? Number(assignedToId)
+            : chore.assignedToId,
+        },
+      });
+      if (completed && updatedChore.assignedToId) {
+        await prisma.userHouse.update({
+          where: {
+            userId_houseId: {
+              userId: updatedChore.assignedToId,
+              houseId: chore.houseId,
+            },
+          },
+          data: {
+            points: {
+              increment: updatedChore.points || 0, // Increment points by the chore's points value
+            },
+          },
+        });
       }
       res.json(updatedChore);
     } catch (error) {
