@@ -42,7 +42,7 @@ router.post(
   createChoreValidator,
   async (req: Request, res: Response) => {
     // For now, the user and house IDs are expected to be provided in the request body.
-    const { title, description, houseId, points } = req.body;
+    const { title, description, houseId, points, dueDate, assignedToId } = req.body;
 
     if (!title || !houseId) {
       res.status(400).json({ error: "title and houseId are required." });
@@ -58,6 +58,8 @@ router.post(
           houseId: Number(houseId),
           points: Number(points),
           referencePhotoUrl: photoUrl,
+          dueDate: dueDate ? new Date(dueDate) : undefined,
+          assignedToId: assignedToId ? Number(assignedToId) : undefined,
         },
       });
       res.status(201).json(newChore);
@@ -79,6 +81,25 @@ router.get("/:id", getChoreValidator, async (req: Request, res: Response) => {
       res.status(404).json({ error: "Chore not found" });
       return;
     }
+
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const userHouse = await prisma.userHouse.findUnique({
+      where: {
+        userId_houseId: {
+          userId: (req.user as any).id,
+          houseId: chore.houseId,
+        },
+      },
+    });
+
+    if (!userHouse) {
+      res.status(403).json({ error: "You do not have access to this chore." });
+      return;
+    }
     res.json(chore);
   } catch (error) {
     console.error("Error fetching chore:", error);
@@ -91,17 +112,73 @@ router.patch(
   updateChoreValidator,
   async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { title, description, dueDate, completed } = req.body;
+    const { title, description, dueDate, completed, assignedToId } = req.body;
 
     try {
+      const chore = await prisma.chore.findUnique({
+        where: { id: Number(id) },
+      });
+
+      if (!chore) {
+        res.status(404).json({ error: "Chore not found" });
+        return;
+      }
+
+      if (!chore.assignedToId && completed) {
+        res.status(400).json({
+          error:
+            "Cannot mark a chore as completed if it is not assigned to anyone.",
+        });
+        return;
+      }
+
+      if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const userHouse = await prisma.userHouse.findUnique({
+        where: {
+          userId_houseId: {
+            userId: (req.user as any).id,
+            houseId: chore.houseId,
+          },
+        },
+      });
+
+      if (!userHouse) {
+        res
+          .status(403)
+          .json({ error: "You do not have access to this chore." });
+        return;
+      }
       const updatedChore = await prisma.chore.update({
         where: { id: Number(id) },
         data: {
-          title,
-          description,
-          dueDate: new Date(dueDate),
+          title: title || chore.title,
+          description: description || chore.description,
+          dueDate: dueDate ? new Date(dueDate) : chore.dueDate,
+          isCompleted: completed,
+          assignedToId: assignedToId
+            ? Number(assignedToId)
+            : chore.assignedToId,
         },
       });
+      if (completed && updatedChore.assignedToId) {
+        await prisma.userHouse.update({
+          where: {
+            userId_houseId: {
+              userId: updatedChore.assignedToId,
+              houseId: chore.houseId,
+            },
+          },
+          data: {
+            points: {
+              increment: updatedChore.points || 0, // Increment points by the chore's points value
+            },
+          },
+        });
+      }
       res.json(updatedChore);
     } catch (error) {
       console.error("Error updating chore:", error);
@@ -117,9 +194,29 @@ router.delete(
     const { id } = req.params;
 
     try {
-      await prisma.chore.delete({
+      const deletedChore = await prisma.chore.delete({
         where: { id: Number(id) },
       });
+      if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const userHouse = await prisma.userHouse.findUnique({
+        where: {
+          userId_houseId: {
+            userId: (req.user as any).id,
+            houseId: deletedChore.houseId,
+          },
+        },
+      });
+
+      if (!userHouse) {
+        res
+          .status(403)
+          .json({ error: "You do not have access to this chore." });
+        return;
+      }
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting chore:", error);

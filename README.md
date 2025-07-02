@@ -55,7 +55,7 @@ To enable asynchronous AI-based photo verification, the app will include a **tas
 _Goal: Core backend endpoints and static UI setup_
 
 - Frontend scaffold with routing
-- Express backend with PostgreSQL using Sequelize ORM
+- Express backend with PostgreSQL using Prisma ORM
 - Database models for User, House, Chore with Prisma
 - Implement basic backend REST endpoints: CRUD of User, House, Chore
 - UI for dashboard, chore list, and draft lobby

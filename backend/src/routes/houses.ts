@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../lib/prisma";
+import { v4 as uuidv4 } from "uuid";
 import { authMiddleware } from "../middlewares/middleware";
 import {
   createHouseValidator,
@@ -65,25 +66,76 @@ router.get("/", getHousesValidator, async (req: Request, res: Response) => {
 });
 
 router.post("/", createHouseValidator, async (req: Request, res: Response) => {
-  // For now, the user ID is expected to be provided in the request body.
-  const { name, userId } = req.body;
+  const { name } = req.body;
 
   try {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: (req.user as any).id },
+      include: { userHouses: true },
+    });
+
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    if (user.userHouses.length > 0) {
+      res.status(400).json({ error: "You are already a member of a house." });
+      return;
+    }
+
     const newHouse = await prisma.house.create({
       data: {
         name,
-        createdById: Number(userId),
+        createdById: (req.user as any).id,
       },
     });
     await prisma.userHouse.create({
       data: {
-        userId: Number(userId),
+        userId: (req.user as any).id,
         houseId: newHouse.id,
       },
     });
     res.status(201).json(newHouse);
   } catch (error) {
     console.error("Error creating house:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.get("/:id", getHouseValidator, async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const house = await prisma.house.findUnique({
+      where: { id: Number(id) },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        _count: {
+          select: { userHouses: true, chores: true },
+        },
+      },
+    });
+
+    if (!house) {
+      res.status(404).json({ error: "House not found" });
+      return;
+    }
+
+    res.json(house);
+  } catch (error) {
+    console.error("Error fetching house:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -100,6 +152,18 @@ router.patch(
         where: { id: Number(id) },
         data: { name },
       });
+
+      if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      if (updatedHouse.createdById !== (req.user as any).id) {
+        res.status(403).json({
+          error: "Forbidden: You do not have permission to update this house.",
+        });
+        return;
+      }
       res.json(updatedHouse);
     } catch (error) {
       console.error("Error updating house:", error);
@@ -113,11 +177,33 @@ router.delete(
   deleteHouseValidator,
   async (req: Request, res: Response) => {
     const { id } = req.params;
-
     try {
-      await prisma.house.delete({
+      const house = await prisma.house.findUnique({
         where: { id: Number(id) },
+        select: { id: true, createdById: true },
       });
+
+      if (!house) {
+        res.status(404).json({ error: "House not found" }); // raise 404 not found
+        return;
+      }
+
+      if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" }); // raise 401 unauthorized
+        return;
+      }
+
+      if (house.createdById !== (req.user as any).id) {
+        res.status(403).json({ // raise 403 forbidden
+          error: "Forbidden: You do not have permission to delete this house.",
+        });
+        return;
+      }
+      
+      await prisma.invitation.deleteMany({ where: { houseId: house.id } });
+      await prisma.chore.deleteMany({ where: { houseId: house.id } });
+      await prisma.userHouse.deleteMany({ where: { houseId: house.id } });
+      await prisma.house.delete({ where: { id: house.id } });
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting house:", error);
@@ -136,6 +222,7 @@ router.get(
       limit = "10",
       sortBy = "createdAt",
       sortDir = "desc",
+      assignedTo,
     } = req.query;
 
     const parsedLimit = Math.min(parseInt(limit as string) || 10, 50); // Cap at 50 items
@@ -153,6 +240,27 @@ router.get(
         return;
       }
 
+      if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const userHouse = await prisma.userHouse.findUnique({
+        where: {
+          userId_houseId: {
+            userId: (req.user as any).id,
+            houseId: house.id,
+          },
+        },
+      });
+
+      if (!userHouse) {
+        res
+          .status(403)
+          .json({ error: "You do not have access to this house." });
+        return;
+      }
+
       // Define query parameters
       const validatedSortBy =
         (sortBy as string) === "createdAt" || (sortBy as string) === "dueDate"
@@ -164,11 +272,19 @@ router.get(
           ? (sortDir as "asc" | "desc")
           : "desc";
 
+      // Prepare where clause with filters
+      const whereClause: any = {
+        houseId: Number(id),
+      };
+
+      // Add assignedTo filter if provided
+      if (assignedTo) {
+        whereClause.assignedToId = Number(assignedTo);
+      }
+
       // Prepare query options
       let queryOptions: any = {
-        where: {
-          houseId: Number(id),
-        },
+        where: whereClause,
         take: parsedLimit,
         orderBy: [
           { [validatedSortBy]: validatedSortDir },
@@ -195,9 +311,9 @@ router.get(
       // Get chores with cursor pagination
       const chores = await prisma.chore.findMany(queryOptions);
 
-      // Get total count of chores for this house
+      // Get total count of chores for this house with the same filters
       const totalCount = await prisma.chore.count({
-        where: { houseId: Number(id) },
+        where: whereClause,
       });
 
       // Determine the next cursor
@@ -219,3 +335,239 @@ router.get(
     }
   }
 );
+
+router.post("/:id/invitations", async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const house = await prisma.house.findUnique({
+      where: { id: Number(id) },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!house) {
+      res.status(404).json({ error: "House not found" });
+      return;
+    }
+
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    if (house.createdById !== (req.user as any).id) {
+      res.status(403).json({
+        error:
+          "Forbidden: You do not have permission to invite users to this house.",
+      });
+      return;
+    }
+
+    await prisma.invitation.deleteMany({
+      where: { houseId: Number(id) },
+    });
+
+    const code = uuidv4();
+
+    const invitation = await prisma.invitation.create({
+      data: {
+        code,
+        houseId: Number(id),
+        invitedById: (req.user as any).id,
+      },
+    });
+
+    res.json({
+      code,
+      link: `${process.env.FRONTEND_URL}/join/${code}`,
+    });
+  } catch (error) {
+    console.error("Error handling house invitation:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/invitations/:code/use", async (req: Request, res: Response) => {
+  const { code } = req.params;
+
+  try {
+    const invitation = await prisma.invitation.findUnique({
+      where: { code },
+      include: {
+        house: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!invitation) {
+      res.status(404).json({ error: "Invitation not found" });
+      return;
+    }
+
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    // Check if user is already a member of the house
+    const user = await prisma.user.findUnique({
+      where: { id: (req.user as any).id },
+      include: { userHouses: true },
+    });
+
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    if (user.userHouses.length > 0) {
+      res.status(400).json({ error: "You are already a member of a house." });
+      return;
+    }
+
+    // Add user to the house
+    await prisma.userHouse.create({
+      data: {
+        userId: (req.user as any).id,
+        houseId: invitation.houseId,
+      },
+    });
+
+    res.json({
+      message: `You have successfully joined the house "${invitation.house.name}".`,
+      houseId: invitation.house.id,
+    });
+  } catch (error) {
+    console.error("Error using invitation code:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.get("/:id/users", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const skip = (page - 1) * limit;
+
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const userHouse = await prisma.userHouse.findUnique({
+      where: {
+        userId_houseId: {
+          userId: (req.user as any).id,
+          houseId: Number(id),
+        },
+      },
+    });
+
+    if (!userHouse) {
+      res.status(403).json({ error: "You do not have access to this house." });
+      return;
+    }
+
+    // Get total count for pagination metadata
+    const totalCount = await prisma.userHouse.count({
+      where: { houseId: Number(id) },
+    });
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    const users = await prisma.userHouse.findMany({
+      where: { houseId: Number(id) },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatarUrl: true,
+          },
+        },
+      },
+      skip,
+      take: limit,
+      orderBy: {
+        points: "desc",
+      },
+    });
+
+    res.json({
+      data: users.map((uh) => {
+        return { ...uh.user, points: uh.points };
+      }),
+      pagination: {
+        totalCount,
+        totalPages,
+        currentPage: page,
+        pageSize: limit,
+        hasNext: page < totalPages,
+        hasPrevious: page > 1,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching house users:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.delete("/:id/leave", async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const userHouse = await prisma.userHouse.findUnique({
+      where: {
+        userId_houseId: {
+          userId: (req.user as any).id,
+          houseId: Number(id),
+        },
+      },
+    });
+
+    if (!userHouse) {
+      res.status(403).json({ error: "You do not have access to this house." });
+      return;
+    }
+
+    await prisma.userHouse.delete({
+      where: {
+        userId_houseId: {
+          userId: (req.user as any).id,
+          houseId: Number(id),
+        },
+      },
+    });
+
+    await prisma.chore.deleteMany({
+      where: {
+        houseId: Number(id),
+        assignedToId: (req.user as any).id,
+      },
+    });
+
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error leaving house:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});

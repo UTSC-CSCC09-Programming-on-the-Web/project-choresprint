@@ -30,6 +30,10 @@ export const createChoreValidator = [
     .optional()
     .isISO8601()
     .withMessage("Due date must be a valid date in ISO 8601 format"),
+  body("assignedToId")
+    .optional()
+    .isInt()
+    .withMessage("Assigned user ID must be an integer"),
   validateRequest,
 ];
 

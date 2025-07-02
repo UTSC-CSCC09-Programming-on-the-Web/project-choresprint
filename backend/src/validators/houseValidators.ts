@@ -76,5 +76,6 @@ export const getHouseChoresValidator = [
     .optional()
     .isIn(["asc", "desc"])
     .withMessage("Sort direction must be either asc or desc"),
+    query("assignedTo").optional().isInt().withMessage("AssignedTo must be an integer"),
   validateRequest,
 ];
