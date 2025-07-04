@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import passport from "passport";
 import jwt from "jsonwebtoken";
-import { authMiddleware } from "../middlewares/middleware";
+import { authMiddleware, subscriptionMiddleware } from "../middlewares/middleware";
 import { prisma } from "../lib/prisma";
 import {
   loginValidator,
@@ -74,7 +74,7 @@ router.get(
 );
 
 // (Optional) Get current user session
-router.get("/me", authMiddleware, async (req, res) => {
+router.get("/me", authMiddleware, subscriptionMiddleware, async (req, res) => {
   try {
     // If authMiddleware passed, we have a valid user
     const userId = (req.user as any).id;
