@@ -508,7 +508,7 @@ router.get("/:id/users", async (req: Request, res: Response) => {
     });
 
     res.json({
-      data: users.map((uh) => {
+      data: users.map((uh: any) => {
         return { ...uh.user, points: uh.points };
       }),
       pagination: {
