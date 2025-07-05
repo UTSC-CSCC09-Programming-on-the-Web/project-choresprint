@@ -272,11 +272,7 @@ const handleSubmit = async () => {
     if (form.value.assignedToId) {
       formData.append("assignedToId", String(form.value.assignedToId));
     }
-
-    if (form.value.assignedTo) {
-      formData.append("assignedTo", form.value.assignedTo);
-    }
-
+    
     if (referenceImage.value) {
       formData.append("file", referenceImage.value);
     }

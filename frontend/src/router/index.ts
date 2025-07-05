@@ -2,6 +2,9 @@ import { createRouter, createWebHistory } from "vue-router";
 import Home from "../pages/Home.vue";
 import Dashboard from "../pages/Dashboard.vue";
 import EditChore from "../pages/EditChore.vue";
+import Subscribe from "../pages/Subscribe.vue";
+import PaymentSuccess from "../pages/PaymentSuccess.vue";
+import PaymentCancel from "../pages/PaymentCancel.vue";
 import { isAuthenticated } from "../lib/auth";
 import { api } from "../api";
 
@@ -12,6 +15,21 @@ const routes = [
     name: "Dashboard",
     component: Dashboard,
     meta: { requiresAuth: true },
+  },
+  {
+    path: "/subscribe",
+    name: "Subscribe",
+    component: Subscribe,
+  },
+  {
+    path: "/payments/success",
+    name: "PaymentSuccess",
+    component: PaymentSuccess,
+  },
+  {
+    path: "/payments/cancel",
+    name: "PaymentCancel",
+    component: PaymentCancel,
   },
   {
     path: "/chores/:id/edit",
@@ -26,7 +44,7 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   if (to.meta.requiresAuth) {
     const authed = await isAuthenticated();
     if (!authed) return next("/");

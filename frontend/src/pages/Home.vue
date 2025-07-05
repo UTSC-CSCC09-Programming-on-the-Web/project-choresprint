@@ -21,6 +21,9 @@
               <router-link to="/dashboard" class="btn btn-primary">
                 Go to Dashboard
               </router-link>
+              <router-link to="/subscribe" class="btn btn-secondary">
+                Manage Subscription
+              </router-link>
             </div>
 
             <div v-else class="cta-buttons">
