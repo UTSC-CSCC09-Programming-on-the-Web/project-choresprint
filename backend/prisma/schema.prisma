@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -22,36 +19,40 @@ model User {
   providerId   String? // external OAuth ID
   refreshToken String?
 
-  userHouses    UserHouse[] // join table for many-to-many
-  chores        Chore[]      @relation("ChoreAssignee")
-  createdHouses House[]      @relation("HouseCreatedBy")
-  createdAt     DateTime     @default(now())
-  Invitation    Invitation[]
+  // User belongs to a house
+  house          House?       @relation("HouseMembers", fields: [houseId], references: [id])
+  houseId        Int?
+  points         Int?         @default(0)
+
+  // User can be a creator of a house
+  createdHouse   House?       @relation("HouseCreator")
+  
+  // User can be assigned chores
+  chores         Chore[]      @relation("ChoreAssignee")
+  
+  // User can create invitations
+  createdInvitations Invitation[] @relation("InvitationCreator")
+  
+  createdAt      DateTime     @default(now())
 }
 
 model House {
-  id          Int    @id @default(autoincrement())
-  name        String
-  createdBy   User   @relation("HouseCreatedBy", fields: [createdById], references: [id])
-  createdById Int
+  id            Int          @id @default(autoincrement())
+  name          String
+  
+  // House has a creator
+  createdBy     User         @relation("HouseCreator", fields: [createdById], references: [id])
+  createdById   Int          @unique
 
-  userHouses UserHouse[] // join table for many-to-many
-  chores     Chore[]
-  createdAt  DateTime     @default(now())
-  Invitation Invitation[]
-}
+  // House has members
+  members       User[]       @relation("HouseMembers")
 
-model UserHouse {
-  user   User @relation(fields: [userId], references: [id])
-  userId Int
+  recurrenceIntervalInDays Int     @default(7) // Weekly by default
+  lastResetAt              DateTime @default(now())
 
-  house   House @relation(fields: [houseId], references: [id])
-  houseId Int
-
-  points   Int      @default(0)
-  joinedAt DateTime @default(now())
-
-  @@id([userId, houseId])
+  chores        Chore[]
+  invitations   Invitation[]
+  createdAt     DateTime     @default(now())
 }
 
 model Chore {
@@ -68,10 +69,10 @@ model Chore {
   house   House @relation(fields: [houseId], references: [id])
   houseId Int
 
-  photoUrl  String? // for uploaded verification photo
-  verified  Boolean  @default(false) // AI decision
-  points    Int      @default(10)
-  createdAt DateTime @default(now())
+  photoUrl      String?   // for uploaded verification photo
+  verified      Boolean   @default(false) // AI decision
+  points        Int       @default(10)
+  createdAt     DateTime  @default(now())
 }
 
 model Invitation {
@@ -79,7 +80,7 @@ model Invitation {
   code        String    @unique // UUID or random token
   house       House     @relation(fields: [houseId], references: [id])
   houseId     Int
-  invitedBy   User      @relation(fields: [invitedById], references: [id])
+  invitedBy   User      @relation("InvitationCreator", fields: [invitedById], references: [id])
   invitedById Int
   used        Boolean   @default(false)
   createdAt   DateTime  @default(now())

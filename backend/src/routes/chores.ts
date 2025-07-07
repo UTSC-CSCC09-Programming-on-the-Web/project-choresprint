@@ -42,7 +42,8 @@ router.post(
   createChoreValidator,
   async (req: Request, res: Response) => {
     // For now, the user and house IDs are expected to be provided in the request body.
-    const { title, description, houseId, points, dueDate, assignedToId } = req.body;
+    const { title, description, houseId, points, dueDate, assignedToId } =
+      req.body;
 
     if (!title || !houseId) {
       res.status(400).json({ error: "title and houseId are required." });
@@ -87,19 +88,20 @@ router.get("/:id", getChoreValidator, async (req: Request, res: Response) => {
       return;
     }
 
-    const userHouse = await prisma.userHouse.findUnique({
-      where: {
-        userId_houseId: {
-          userId: (req.user as any).id,
-          houseId: chore.houseId,
-        },
-      },
+    const user = await prisma.user.findUnique({
+      where: { id: (req.user as any).id },
     });
 
-    if (!userHouse) {
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    if (chore.houseId !== user.houseId) {
       res.status(403).json({ error: "You do not have access to this chore." });
       return;
     }
+
     res.json(chore);
   } catch (error) {
     console.error("Error fetching chore:", error);
@@ -117,6 +119,9 @@ router.patch(
     try {
       const chore = await prisma.chore.findUnique({
         where: { id: Number(id) },
+        include: {
+          house: true, // Include the house to check if the user is a member
+        },
       });
 
       if (!chore) {
@@ -137,16 +142,16 @@ router.patch(
         return;
       }
 
-      const userHouse = await prisma.userHouse.findUnique({
-        where: {
-          userId_houseId: {
-            userId: (req.user as any).id,
-            houseId: chore.houseId,
-          },
-        },
+      const user = await prisma.user.findUnique({
+        where: { id: (req.user as any).id },
       });
 
-      if (!userHouse) {
+      if (!user) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+
+      if (chore.house.createdById !== user.id) {
         res
           .status(403)
           .json({ error: "You do not have access to this chore." });
@@ -165,16 +170,12 @@ router.patch(
         },
       });
       if (completed && updatedChore.assignedToId) {
-        await prisma.userHouse.update({
-          where: {
-            userId_houseId: {
-              userId: updatedChore.assignedToId,
-              houseId: chore.houseId,
-            },
-          },
+        // Increment points for the user who completed the chore
+        await prisma.user.update({
+          where: { id: updatedChore.assignedToId },
           data: {
             points: {
-              increment: updatedChore.points || 0, // Increment points by the chore's points value
+              increment: updatedChore.points,
             },
           },
         });
@@ -194,29 +195,42 @@ router.delete(
     const { id } = req.params;
 
     try {
-      const deletedChore = await prisma.chore.delete({
-        where: { id: Number(id) },
-      });
       if (!req.user) {
         res.status(401).json({ error: "Unauthorized" });
         return;
       }
 
-      const userHouse = await prisma.userHouse.findUnique({
-        where: {
-          userId_houseId: {
-            userId: (req.user as any).id,
-            houseId: deletedChore.houseId,
-          },
+      const user = await prisma.user.findUnique({
+        where: { id: (req.user as any).id },
+      });
+
+      if (!user) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+
+      const chore = await prisma.chore.findUnique({
+        where: { id: Number(id) },
+        include: {
+          house: true, // Include the house to check if the user is a member
         },
       });
 
-      if (!userHouse) {
-        res
-          .status(403)
-          .json({ error: "You do not have access to this chore." });
+      if (!chore) {
+        res.status(404).json({ error: "Chore not found" });
         return;
       }
+
+      if (chore.house.createdById !== user.id) {
+        res.status(403).json({
+          error: "You do not have permission to delete this chore.",
+        });
+        return;
+      }
+      await prisma.chore.delete({
+        where: { id: Number(id) },
+      });
+
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting chore:", error);

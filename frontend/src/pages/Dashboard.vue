@@ -10,8 +10,7 @@ import { RouterLink } from "vue-router";
 
 // State
 const user = ref(null);
-const userHouses = ref([]);
-const currentHouse = ref(null);
+const house = ref(null);
 const houseUsers = ref([]);
 const houseChores = ref([]);
 const userChores = ref([]);
@@ -42,7 +41,7 @@ const userChoresPagination = ref({
 
 // Computed properties
 const isHouseOwner = computed(() => {
-  return user.value?.id === currentHouse.value?.createdById;
+  return user.value?.id === house.value?.createdById;
 });
 
 const totalChores = computed(() => {
@@ -89,19 +88,17 @@ async function loadDashboard() {
     user.value = me;
 
     try {
-      const { data: houses } = await api.get(`/users/${me.id}/houses`);
-      userHouses.value = houses || [];
-
-      if (!houses || houses.length === 0) {
+      if (me.houseId === null) {
         showCreateJoin.value = true;
-        currentHouse.value = null;
+        house.value = null;
       } else {
-        currentHouse.value = houses[0].house;
+        const { data: houseData } = await api.get(`/houses/${me.houseId}`);
+        house.value = houseData;
         showCreateJoin.value = false;
 
         try {
           const { data: users } = await api.get(
-            `/houses/${currentHouse.value.id}/users`
+            `/houses/${house.value.id}/users`
           );
 
           // Clear previous data
@@ -138,8 +135,8 @@ async function loadDashboard() {
         }
       }
     } catch (err) {
-      console.error("Error fetching user houses:", err);
-      error.value = "Failed to load your houses";
+      console.error("Error fetching user house:", err);
+      error.value = "Failed to load your house";
       showCreateJoin.value = true;
     }
   } catch (err) {
@@ -152,7 +149,7 @@ async function loadDashboard() {
 
 // Load house chores with pagination
 async function loadHouseChores() {
-  if (!currentHouse.value || choresPagination.value.loading) return;
+  if (!house.value || choresPagination.value.loading) return;
 
   choresPagination.value.loading = true;
 
@@ -160,7 +157,7 @@ async function loadHouseChores() {
     const cursor = choresPagination.value.nextCursor;
     const limit = choresPagination.value.limit;
 
-    let url = `/houses/${currentHouse.value.id}/chores?limit=${limit}`;
+    let url = `/houses/${house.value.id}/chores?limit=${limit}`;
     if (cursor) {
       url += `&cursor=${cursor}`;
     }
@@ -199,7 +196,7 @@ async function loadHouseChores() {
 
 // Load user chores with pagination
 async function loadUserChores(userId) {
-  if (!currentHouse.value || userChoresPagination.value.loading) return;
+  if (!house.value || userChoresPagination.value.loading) return;
 
   userChoresPagination.value.loading = true;
 
@@ -207,7 +204,7 @@ async function loadUserChores(userId) {
     const cursor = userChoresPagination.value.nextCursor;
     const limit = userChoresPagination.value.limit;
 
-    let url = `/houses/${currentHouse.value.id}/chores?assignedTo=${userId}&limit=${limit}`;
+    let url = `/houses/${house.value.id}/chores?assignedTo=${userId}&limit=${limit}`;
     if (cursor) {
       url += `&cursor=${cursor}`;
     }
@@ -282,7 +279,7 @@ function deleteHouse() {
     )
   ) {
     api
-      .delete(`/houses/${currentHouse.value.id}`)
+      .delete(`/houses/${house.value.id}`)
       .then(() => {
         loadDashboard();
       })
@@ -299,7 +296,7 @@ function leaveHouse() {
     )
   ) {
     api
-      .delete(`/houses/${currentHouse.value.id}/leave`)
+      .delete(`/houses/${house.value.id}/leave`)
       .then(() => {
         loadDashboard();
       })
@@ -430,7 +427,7 @@ function formatDate(dateString) {
 
           <div class="card-body">
             <div class="house-details">
-              <h3 class="house-name">{{ currentHouse?.name }}</h3>
+              <h3 class="house-name">{{ house?.name }}</h3>
 
               <div class="house-stats">
                 <div class="stat-box">
@@ -742,7 +739,7 @@ function formatDate(dateString) {
 
         <div class="modal-body">
           <CreateChoreForm
-            :house-id="currentHouse?.id"
+            :house-id="house?.id"
             @created="
               () => {
                 loadDashboard();
@@ -765,7 +762,7 @@ function formatDate(dateString) {
         </div>
 
         <div class="modal-body">
-          <InviteCodeGenerator :house-id="currentHouse?.id" />
+          <InviteCodeGenerator :house-id="house?.id" />
         </div>
       </div>
     </div>

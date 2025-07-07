@@ -85,6 +85,7 @@ router.get("/me", authMiddleware, async (req, res) => {
         id: true,
         email: true,
         name: true,
+        houseId: true,
         avatarUrl: true,
         // Add other fields you want to return
       },

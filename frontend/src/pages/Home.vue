@@ -241,6 +241,7 @@ interface User {
   name: string;
   email: string;
   avatarUrl?: string;
+  houseId?: number | null;
 }
 
 const user = ref<User | null>(null);
