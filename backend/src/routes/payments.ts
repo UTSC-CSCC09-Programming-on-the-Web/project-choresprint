@@ -123,3 +123,108 @@ router.post(
     res.json({ received: true });
   }
 );
+
+// return the current subscription status for the logged in user
+router.get("/subscription", authMiddleware, async (req, res) => {
+  try {
+    const userId = (req.user as any).id;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.stripeCustomerId) {
+      res.json({ subscribed: false });
+      return;
+    }
+
+    const subs = await stripe.subscriptions.list({
+      customer: user.stripeCustomerId,
+      status: "all",
+      limit: 1,
+    });
+
+    if (subs.data.length === 0) {
+      res.json({ subscribed: false });
+      return;
+    }
+
+    const sub = subs.data[0];
+    res.json({
+      id: sub.id,
+      status: sub.status,
+      current_period_end: (sub as any).current_period_end,
+    });
+  } catch (err) {
+    console.error("Error fetching subscription:", err);
+    res.status(500).json({ error: "Failed to fetch subscription" });
+  }
+});
+
+// cancel the user's active subscription
+router.post("/subscription/cancel", authMiddleware, async (req, res) => {
+  try {
+    const userId = (req.user as any).id;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.stripeCustomerId) {
+      res.status(400).json({ error: "No active subscription" });
+      return;
+    }
+
+    const subs = await stripe.subscriptions.list({
+      customer: user.stripeCustomerId,
+      status: "active",
+      limit: 1,
+    });
+    if (subs.data.length === 0) {
+      res.status(400).json({ error: "No active subscription" });
+      return;
+    }
+
+    const sub = subs.data[0];
+    await stripe.subscriptions.cancel(sub.id);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { subscriptionStatus: "canceled" },
+    });
+
+    res.json({ canceled: true });
+  } catch (err) {
+    console.error("Error canceling subscription:", err);
+    res.status(500).json({ error: "Failed to cancel subscription" });
+  }
+});
+
+// confirm a checkout session and update the user's subscription status
+router.get("/confirm", async (req, res) => {
+  try {
+    const sessionId = req.query.session_id as string | undefined;
+    if (!sessionId) {
+      res.status(400).json({ error: "Missing session id" });
+      return;
+    }
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const subId = session.subscription as string | undefined;
+    if (!subId || session.payment_status !== "paid") {
+      res.status(400).json({ error: "Invalid session" });
+      return;
+    }
+
+    const subscription = (await stripe.subscriptions.retrieve(subId)) as any;
+    const customerId = subscription.customer as string;
+    const user = await prisma.user.findFirst({
+      where: { stripeCustomerId: customerId },
+    });
+    if (user) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { subscriptionStatus: subscription.status },
+      });
+    }
+
+    res.json({
+      status: subscription.status,
+      current_period_end: subscription.current_period_end,
+    });
+  } catch (err) {
+    console.error("Error confirming session:", err);
+    res.status(500).json({ error: "Failed to confirm session" });
+  }
+});
