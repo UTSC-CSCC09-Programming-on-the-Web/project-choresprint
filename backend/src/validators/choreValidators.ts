@@ -14,7 +14,7 @@ export const createChoreValidator = [
     .isLength({ min: 2, max: 100 })
     .withMessage("Chore title must be between 2 and 100 characters"),
   body("description")
-    .optional()
+    .optional({ nullable: true })
     .isString()
     .withMessage("Chore description must be a string"),
   body("houseId")
@@ -27,11 +27,11 @@ export const createChoreValidator = [
     .isInt()
     .withMessage("Points must be between 1 and 100"),
   body("dueDate")
-    .optional()
+    .optional({ nullable: true })
     .isISO8601()
     .withMessage("Due date must be a valid date in ISO 8601 format"),
   body("assignedToId")
-    .optional()
+    .optional({ nullable: true })
     .isInt()
     .withMessage("Assigned user ID must be an integer"),
   validateRequest,
@@ -46,11 +46,11 @@ export const updateChoreValidator = [
     .isLength({ min: 2, max: 100 })
     .withMessage("Chore title must be between 2 and 100 characters"),
   body("description")
-    .optional()
+    .optional({ nullable: true })
     .isString()
     .withMessage("Chore description must be a string"),
   body("dueDate")
-    .optional()
+    .optional({ nullable: true })
     .isISO8601()
     .withMessage("Due date must be a valid date in ISO 8601 format"),
   body("isCompleted")
@@ -58,7 +58,7 @@ export const updateChoreValidator = [
     .isBoolean()
     .withMessage("isCompleted must be a boolean"),
   body("assignedToId")
-    .optional()
+    .optional({ nullable: true })
     .isInt()
     .withMessage("Assigned user ID must be an integer"),
   validateRequest,

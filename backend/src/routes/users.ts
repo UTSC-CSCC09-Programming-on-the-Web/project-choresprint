@@ -110,23 +110,23 @@ router.delete(
   }
 );
 
-router.get("/:id/houses", async (req: Request, res: Response) => {
-  const { id } = req.params;
-  try {
-    if ((req.user as any).id !== Number(id)) {
-      res
-        .status(403)
-        .json({ error: "Forbidden: You can only access your own houses." });
-      return;
-    }
+// router.get("/:id/houses", async (req: Request, res: Response) => {
+//   const { id } = req.params;
+//   try {
+//     if ((req.user as any).id !== Number(id)) {
+//       res
+//         .status(403)
+//         .json({ error: "Forbidden: You can only access your own houses." });
+//       return;
+//     }
 
-    const userHouses = await prisma.userHouse.findMany({
-      where: { userId: Number(id) },
-      include: { house: true }, // Include house details
-    });
-    res.json(userHouses);
-  } catch (error) {
-    console.error("Error fetching user's houses:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
+//     const userHouses = await prisma.userHouse.findMany({
+//       where: { userId: Number(id) },
+//       include: { house: true }, // Include house details
+//     });
+//     res.json(userHouses);
+//   } catch (error) {
+//     console.error("Error fetching user's houses:", error);
+//     res.status(500).json({ error: "Internal Server Error" });
+//   }
+// });
