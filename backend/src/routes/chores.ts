@@ -114,7 +114,7 @@ router.patch(
   updateChoreValidator,
   async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { title, description, dueDate, completed, assignedToId } = req.body;
+    const { title, description, dueDate, isCompleted, assignedToId } = req.body;
 
     try {
       const chore = await prisma.chore.findUnique({
@@ -129,7 +129,7 @@ router.patch(
         return;
       }
 
-      if (!chore.assignedToId && completed) {
+      if (!chore.assignedToId && isCompleted) {
         res.status(400).json({
           error:
             "Cannot mark a chore as completed if it is not assigned to anyone.",
@@ -151,7 +151,10 @@ router.patch(
         return;
       }
 
-      if (chore.house.createdById !== user.id) {
+      if (
+        chore.house.createdById !== user.id &&
+        chore.assignedToId !== user.id
+      ) {
         res
           .status(403)
           .json({ error: "You do not have access to this chore." });
@@ -163,13 +166,13 @@ router.patch(
           title: title || chore.title,
           description: description || chore.description,
           dueDate: dueDate ? new Date(dueDate) : chore.dueDate,
-          isCompleted: completed,
+          isCompleted: isCompleted,
           assignedToId: assignedToId
             ? Number(assignedToId)
             : chore.assignedToId,
         },
       });
-      if (completed && updatedChore.assignedToId) {
+      if (isCompleted && updatedChore.assignedToId) {
         // Increment points for the user who completed the chore
         await prisma.user.update({
           where: { id: updatedChore.assignedToId },
