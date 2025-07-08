@@ -122,6 +122,13 @@ onMounted(() => {
               class="dropdown-menu"
               :class="{ 'dropdown-menu-active': dropdownOpen }"
             >
+              <router-link
+                to="/manage-subscription"
+                class="dropdown-item dropdown-manage-sub"
+                @click="toggleDropdown"
+              >
+                Manage Subscription
+              </router-link>
               <button class="dropdown-item" @click="logout">Logout</button>
             </div>
           </div>
@@ -268,6 +275,11 @@ onMounted(() => {
   border-radius: var(--radius-sm);
   transition: background-color var(--transition-fast);
   color: var(--gray-dark);
+  text-decoration: none;
+}
+
+.dropdown-manage-sub {
+  font-size: var(--font-size-sm);
 }
 
 .dropdown-item:hover {
