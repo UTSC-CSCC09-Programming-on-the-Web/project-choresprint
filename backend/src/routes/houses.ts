@@ -386,7 +386,7 @@ router.post("/:id/invitations", async (req: Request, res: Response) => {
 
     res.json({
       code,
-      link: `${process.env.FRONTEND_URL}/join/${code}`,
+      link: `${process.env.CLIENT_URL}/join/${code}`,
     });
   } catch (error) {
     console.error("Error handling house invitation:", error);

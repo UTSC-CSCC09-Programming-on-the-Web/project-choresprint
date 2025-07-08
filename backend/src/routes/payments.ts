@@ -12,7 +12,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 // checkout session creation
-router.post("/checkout", authMiddleware, async (req: Request, res: Response) => {
+router.post("/checkout", authMiddleware, async (req, res) => {
   try {
     const userId = (req.user as any).id;
     const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -33,12 +33,18 @@ router.post("/checkout", authMiddleware, async (req: Request, res: Response) => 
     }
 
     // Copilot: Finish this checkout session creation using stripe
+    const priceId = process.env.STRIPE_PRICE_ID;
+    if (!priceId) { // check if the price ID is set in the environment variables
+      console.error("STRIPE_PRICE_ID environment variable is missing");
+      res.status(500).json({ error: "Stripe price configuration missing" });
+      return;
+    }
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
       mode: "subscription",
       line_items: [
         {
-          price: process.env.STRIPE_PRICE_ID!,
+          price: priceId,
           quantity: 1,
         },
       ],

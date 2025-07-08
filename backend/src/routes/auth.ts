@@ -74,7 +74,7 @@ router.get(
 );
 
 // (Optional) Get current user session
-router.get("/me", authMiddleware, subscriptionMiddleware, async (req, res) => {
+router.get("/me", authMiddleware, async (req, res) => {
   try {
     // If authMiddleware passed, we have a valid user
     const userId = (req.user as any).id;
@@ -86,6 +86,7 @@ router.get("/me", authMiddleware, subscriptionMiddleware, async (req, res) => {
         email: true,
         name: true,
         avatarUrl: true,
+        subscriptionStatus: true,
         // Add other fields you want to return
       },
     });
@@ -95,7 +96,8 @@ router.get("/me", authMiddleware, subscriptionMiddleware, async (req, res) => {
       return;
     }
 
-    res.json(user);
+    const subscriptionRequired = user.subscriptionStatus !== "active";
+    res.json({ ...user, subscriptionRequired });
   } catch (error) {
     console.error("Error in /me endpoint:", error);
     res.status(500).json({ error: "Server error" });
