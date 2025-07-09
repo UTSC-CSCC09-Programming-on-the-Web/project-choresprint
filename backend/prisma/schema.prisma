@@ -18,6 +18,8 @@ model User {
   provider     String? // e.g. "google"
   providerId   String? // external OAuth ID
   refreshToken String?
+  stripeCustomerId String? // Stripe customer ID for billing
+  subscriptionStatus String?
 
   // User belongs to a house
   house          House?       @relation("HouseMembers", fields: [houseId], references: [id])

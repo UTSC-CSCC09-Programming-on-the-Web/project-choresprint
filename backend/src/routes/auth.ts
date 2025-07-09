@@ -4,11 +4,7 @@ import jwt from "jsonwebtoken";
 import { authMiddleware } from "../middlewares/middleware";
 import { prisma } from "../lib/prisma";
 import {
-  loginValidator,
-  signupValidator,
   refreshTokenValidator,
-  resetPasswordValidator,
-  newPasswordValidator,
 } from "../validators/authValidators";
 
 export const router = express.Router();
@@ -87,6 +83,7 @@ router.get("/me", authMiddleware, async (req, res) => {
         name: true,
         houseId: true,
         avatarUrl: true,
+        subscriptionStatus: true,
         // Add other fields you want to return
       },
     });
@@ -96,7 +93,8 @@ router.get("/me", authMiddleware, async (req, res) => {
       return;
     }
 
-    res.json(user);
+    const subscriptionRequired = user.subscriptionStatus !== "active";
+    res.json({ ...user, subscriptionRequired });
   } catch (error) {
     console.error("Error in /me endpoint:", error);
     res.status(500).json({ error: "Server error" });

@@ -2,7 +2,11 @@ import { createRouter, createWebHistory } from "vue-router";
 import Home from "../pages/Home.vue";
 import Dashboard from "../pages/Dashboard.vue";
 import EditChore from "../pages/EditChore.vue";
-import { isAuthenticated } from "../lib/auth";
+import Subscribe from "../pages/Subscribe.vue";
+import PaymentSuccess from "../pages/PaymentSuccess.vue";
+import PaymentCancel from "../pages/PaymentCancel.vue";
+import ManageSubscription from "../pages/ManageSubscription.vue";
+import { getAuthStatus } from "../lib/auth";
 import { api } from "../api";
 
 const routes = [
@@ -12,6 +16,27 @@ const routes = [
     name: "Dashboard",
     component: Dashboard,
     meta: { requiresAuth: true },
+  },
+  {
+    path: "/subscribe",
+    name: "Subscribe",
+    component: Subscribe,
+  },
+  {
+    path: "/manage-subscription",
+    name: "ManageSubscription",
+    component: ManageSubscription,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/payments/success",
+    name: "PaymentSuccess",
+    component: PaymentSuccess,
+  },
+  {
+    path: "/payments/cancel",
+    name: "PaymentCancel",
+    component: PaymentCancel,
   },
   {
     path: "/chores/:id/edit",
@@ -26,19 +51,23 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   if (to.meta.requiresAuth) {
-    const authed = await isAuthenticated();
-    if (!authed) return next("/");
+    const status = await getAuthStatus();
+    if (!status.authed) return next("/");
+    if (status.subscriptionRequired) return next("/subscribe");
   }
   if (to.name === "EditChore") {
-    const userRes = await api.get("/auth/me");
+    const auth = await getAuthStatus();
+    if (!auth.authed || auth.subscriptionRequired) {
+      return next("/");
+    }
     const choreRes = await api.get(`/chores/${to.params.id}`);
     if (!choreRes) {
       return next({ name: "Dashboard" });
     }
     const houseRes = await api.get(`/houses/${choreRes.data.houseId}`);
-    if (userRes.data.id !== houseRes.data.createdById) {
+    if (auth.user.id !== houseRes.data.createdById) {
       return next({ name: "Dashboard" });
     }
   }

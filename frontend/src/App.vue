@@ -4,6 +4,7 @@ import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "./api";
 import { getGoogleAuthUrl } from "./utils/config";
+import { getAuthStatus } from "./lib/auth";
 
 interface User {
   id: string;
@@ -16,6 +17,7 @@ interface User {
 const user = ref<User | null>(null);
 const isLoading = ref(true);
 const dropdownOpen = ref(false);
+const subscriptionRequired = ref(false);
 
 // Get router
 const router = useRouter();
@@ -45,8 +47,16 @@ onMounted(() => {
 // Check if user is logged in
 const checkAuth = async () => {
   try {
-    const { data } = await api.get("/auth/me");
-    user.value = data;
+    const status = await getAuthStatus();
+    if (status.authed && !status.subscriptionRequired) {
+      user.value = status.user;
+    } else if (status.subscriptionRequired) {
+      user.value = status.user;
+      subscriptionRequired.value = true;
+      router.push("/subscribe");
+    } else {
+      user.value = null;
+    }
   } catch (error) {
     console.error("Authentication check failed:", error);
     user.value = null;
@@ -112,6 +122,13 @@ onMounted(() => {
               class="dropdown-menu"
               :class="{ 'dropdown-menu-active': dropdownOpen }"
             >
+              <router-link
+                to="/manage-subscription"
+                class="dropdown-item dropdown-manage-sub"
+                @click="toggleDropdown"
+              >
+                Manage Subscription
+              </router-link>
               <button class="dropdown-item" @click="logout">Logout</button>
             </div>
           </div>
@@ -258,6 +275,11 @@ onMounted(() => {
   border-radius: var(--radius-sm);
   transition: background-color var(--transition-fast);
   color: var(--gray-dark);
+  text-decoration: none;
+}
+
+.dropdown-manage-sub {
+  font-size: var(--font-size-sm);
 }
 
 .dropdown-item:hover {
@@ -303,5 +325,14 @@ onMounted(() => {
     flex-direction: column;
     gap: var(--spacing-md);
   }
+}
+
+.sub-required {
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background-color: var(--warning);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-sm);
+  text-align: center;
 }
 </style>

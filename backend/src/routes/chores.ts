@@ -3,7 +3,7 @@ import { prisma } from "../lib/prisma";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { authMiddleware } from "../middlewares/middleware";
+import { authMiddleware, subscriptionMiddleware } from "../middlewares/middleware";
 import {
   createChoreValidator,
   updateChoreValidator,
@@ -34,8 +34,7 @@ const upload = multer({ storage });
 
 export const router = Router();
 
-router.use(authMiddleware); // Apply auth middleware to all routes in this router
-
+router.use(authMiddleware, subscriptionMiddleware); // require auth and active subscription
 router.post(
   "/",
   upload.single("file"),

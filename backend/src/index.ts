@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
+import bodyParser from "body-parser";
 import { prisma } from "./lib/prisma";
 import passport from "./config/passport";
 
@@ -9,6 +10,7 @@ import { router as choresRouter } from "./routes/chores";
 import { router as housesRouter } from "./routes/houses";
 import { router as authRouter } from "./routes/auth";
 import { router as usersRouter } from "./routes/users";
+import { router as paymentsRouter } from "./routes/payments";
 
 dotenv.config();
 const app = express();
@@ -19,6 +21,7 @@ app.use(
     credentials: true, // Important for cookies to work cross-domain
   })
 );
+app.use("/api/payments/webhook", bodyParser.raw({ type: "application/json" }));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -44,3 +47,4 @@ app.use("/api/chores", choresRouter);
 app.use("/api/houses", housesRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/users", usersRouter);
+app.use("/api/payments", paymentsRouter);

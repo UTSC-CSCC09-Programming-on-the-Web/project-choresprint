@@ -1,5 +1,4 @@
 import { defineStore } from "pinia";
-import { api } from "../api";
 import userApiService from "../api/user";
 
 interface User {
@@ -9,6 +8,7 @@ interface User {
   avatarUrl?: string;
   houseId?: number | null;
   points?: number;
+  subscriptionRequired?: boolean;
 }
 
 export const useUserStore = defineStore("user", {

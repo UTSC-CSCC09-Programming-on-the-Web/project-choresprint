@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { v4 as uuidv4 } from "uuid";
-import { authMiddleware } from "../middlewares/middleware";
+import { authMiddleware, subscriptionMiddleware } from "../middlewares/middleware";
 import {
   createHouseValidator,
   updateHouseValidator,
@@ -13,8 +13,7 @@ import {
 
 export const router = Router();
 
-router.use(authMiddleware); // Apply auth middleware to all routes in this router
-
+router.use(authMiddleware, subscriptionMiddleware); // require auth and active subscription
 router.get("/", getHousesValidator, async (req: Request, res: Response) => {
   try {
     // Parse pagination parameters from query string
@@ -389,7 +388,7 @@ router.post("/:id/invitations", async (req: Request, res: Response) => {
 
     res.json({
       code,
-      link: `${process.env.FRONTEND_URL}/join/${code}`,
+      link: `${process.env.CLIENT_URL}/join/${code}`,
     });
   } catch (error) {
     console.error("Error handling house invitation:", error);

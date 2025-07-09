@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../lib/prisma";
-import { authMiddleware } from "../middlewares/middleware";
+import { authMiddleware, subscriptionMiddleware } from "../middlewares/middleware";
 import {
   createUserValidator,
   updateUserValidator,
@@ -11,7 +11,7 @@ import {
 
 export const router = Router();
 
-router.use(authMiddleware); // Apply auth middleware to all routes in this router
+router.use(authMiddleware, subscriptionMiddleware); // require auth and active subscription
 
 router.get("/", getUsersValidator, async (req: Request, res: Response) => {
   // Pagination parameters
