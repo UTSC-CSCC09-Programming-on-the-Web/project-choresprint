@@ -9,23 +9,41 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { api } from '../api'
+import { onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { usePayment } from '../composables/usePayment';
 
-const loading = ref(false)
-const error = ref('')
+const router = useRouter();
+const { 
+  error,
+  loading,
+  isSubscribed,
+  isAuthenticated,
+  subscriptionRequired,
+  startCheckout, 
+  fetchSubscriptionStatus 
+} = usePayment();
 
-async function startCheckout() {
-  loading.value = true
-  error.value = ''
-  try {
-    const res = await api.post('/payments/checkout')
-    window.location.href = res.data.url
-  } catch (e: any) {
-    error.value = 'Unable to start checkout.'
-    loading.value = false
+// Check authentication and subscription status
+onMounted(async () => {
+  // Check if user is authenticated
+  if (!isAuthenticated.value) {
+    router.push('/');
+    return;
   }
-}
+
+  try {
+    await fetchSubscriptionStatus();
+    
+    // If user is already subscribed or doesn't require subscription
+    if (isSubscribed.value || !subscriptionRequired.value) {
+      router.push('/dashboard');
+    }
+  } catch (error) {
+    console.error('Failed to check subscription status:', error);
+  }
+});
+
 </script>
 
 <style scoped>

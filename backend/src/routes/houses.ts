@@ -41,7 +41,7 @@ router.get("/", getHousesValidator, async (req: Request, res: Response) => {
           },
         },
         _count: {
-          select: { userHouses: true, chores: true },
+          select: { members: true, chores: true },
         },
       },
     });
@@ -75,7 +75,6 @@ router.post("/", createHouseValidator, async (req: Request, res: Response) => {
 
     const user = await prisma.user.findUnique({
       where: { id: (req.user as any).id },
-      include: { userHouses: true },
     });
 
     if (!user) {
@@ -83,7 +82,7 @@ router.post("/", createHouseValidator, async (req: Request, res: Response) => {
       return;
     }
 
-    if (user.userHouses.length > 0) {
+    if (user.houseId !== null) {
       res.status(400).json({ error: "You are already a member of a house." });
       return;
     }
@@ -94,11 +93,9 @@ router.post("/", createHouseValidator, async (req: Request, res: Response) => {
         createdById: (req.user as any).id,
       },
     });
-    await prisma.userHouse.create({
-      data: {
-        userId: (req.user as any).id,
-        houseId: newHouse.id,
-      },
+    await prisma.user.update({
+      where: { id: (req.user as any).id },
+      data: { houseId: newHouse.id },
     });
     res.status(201).json(newHouse);
   } catch (error) {
@@ -122,7 +119,7 @@ router.get("/:id", getHouseValidator, async (req: Request, res: Response) => {
           },
         },
         _count: {
-          select: { userHouses: true, chores: true },
+          select: { members: true, chores: true },
         },
       },
     });
@@ -201,7 +198,10 @@ router.delete(
       
       await prisma.invitation.deleteMany({ where: { houseId: house.id } });
       await prisma.chore.deleteMany({ where: { houseId: house.id } });
-      await prisma.userHouse.deleteMany({ where: { houseId: house.id } });
+      await prisma.user.updateMany({
+        where: { houseId: house.id },
+        data: { houseId: null, points: 0 }, 
+      });
       await prisma.house.delete({ where: { id: house.id } });
       res.status(204).send();
     } catch (error) {
@@ -244,21 +244,23 @@ router.get(
         return;
       }
 
-      const userHouse = await prisma.userHouse.findUnique({
-        where: {
-          userId_houseId: {
-            userId: (req.user as any).id,
-            houseId: house.id,
-          },
-        },
+      const user = await prisma.user.findUnique({
+        where: { id: (req.user as any).id },
+        select: { houseId: true },
       });
 
-      if (!userHouse) {
-        res
-          .status(403)
-          .json({ error: "You do not have access to this house." });
+      if (!user) {
+        res.status(404).json({ error: "User not found" });
         return;
       }
+
+      if (house.id !== user.houseId) {
+        res.status(403).json({
+          error: "Forbidden: You do not have permission to access this house.",
+        });
+        return;
+      }
+      
 
       // Define query parameters
       const validatedSortBy =
@@ -423,7 +425,6 @@ router.post("/invitations/:code/use", async (req: Request, res: Response) => {
     // Check if user is already a member of the house
     const user = await prisma.user.findUnique({
       where: { id: (req.user as any).id },
-      include: { userHouses: true },
     });
 
     if (!user) {
@@ -431,17 +432,15 @@ router.post("/invitations/:code/use", async (req: Request, res: Response) => {
       return;
     }
 
-    if (user.userHouses.length > 0) {
+    if (user.houseId !== null) {
       res.status(400).json({ error: "You are already a member of a house." });
       return;
     }
 
     // Add user to the house
-    await prisma.userHouse.create({
-      data: {
-        userId: (req.user as any).id,
-        houseId: invitation.houseId,
-      },
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { houseId: invitation.house.id },
     });
 
     res.json({
@@ -466,50 +465,68 @@ router.get("/:id/users", async (req: Request, res: Response) => {
       return;
     }
 
-    const userHouse = await prisma.userHouse.findUnique({
-      where: {
-        userId_houseId: {
-          userId: (req.user as any).id,
-          houseId: Number(id),
-        },
-      },
+    const user = await prisma.user.findUnique({
+      where: { id: (req.user as any).id },
+      select: { houseId: true },
     });
 
-    if (!userHouse) {
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    if (user.houseId !== Number(id)) {
       res.status(403).json({ error: "You do not have access to this house." });
       return;
     }
 
     // Get total count for pagination metadata
-    const totalCount = await prisma.userHouse.count({
+    const totalCount = await prisma.user.count({
       where: { houseId: Number(id) },
     });
 
     const totalPages = Math.ceil(totalCount / limit);
 
-    const users = await prisma.userHouse.findMany({
+    const users = await prisma.user.findMany({
       where: { houseId: Number(id) },
-      include: {
-        user: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatarUrl: true,
+        chores: {
+          where: {
+            isCompleted: true,
+          },
           select: {
-            id: true,
-            name: true,
-            email: true,
-            avatarUrl: true,
+            points: true,
           },
         },
       },
       skip,
       take: limit,
       orderBy: {
-        points: "desc",
+        name: "asc", // Order by name since we can't order by points directly
       },
     });
 
+    // Calculate points for each user and map the response
+    const usersWithPoints = users.map(user => {
+      const totalPoints = user.chores.reduce((sum, chore) => sum + chore.points, 0);
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatarUrl: user.avatarUrl,
+        points: totalPoints,
+      };
+    });
+
+    // Sort by points in descending order
+    usersWithPoints.sort((a, b) => b.points - a.points);
+
     res.json({
-      data: users.map((uh: any) => {
-        return { ...uh.user, points: uh.points };
-      }),
+      data: usersWithPoints,
       pagination: {
         totalCount,
         totalPages,
@@ -534,34 +551,31 @@ router.delete("/:id/leave", async (req: Request, res: Response) => {
       return;
     }
 
-    const userHouse = await prisma.userHouse.findUnique({
-      where: {
-        userId_houseId: {
-          userId: (req.user as any).id,
-          houseId: Number(id),
-        },
-      },
+    const user = await prisma.user.findUnique({
+      where: { id: (req.user as any).id },
     });
 
-    if (!userHouse) {
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    if (user.houseId !== Number(id)) {
       res.status(403).json({ error: "You do not have access to this house." });
       return;
     }
 
-    await prisma.userHouse.delete({
-      where: {
-        userId_houseId: {
-          userId: (req.user as any).id,
-          houseId: Number(id),
-        },
-      },
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { houseId: null, points: 0 }, // Reset points when leaving the house
     });
 
-    await prisma.chore.deleteMany({
+    await prisma.chore.updateMany({
       where: {
         houseId: Number(id),
         assignedToId: (req.user as any).id,
       },
+      data: { assignedToId: null },
     });
 
     res.status(204).send();
