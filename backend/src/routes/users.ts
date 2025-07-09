@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../lib/prisma";
-import { authMiddleware, subscriptionMiddleware } from "../middlewares/middleware";import {
+import { authMiddleware, subscriptionMiddleware } from "../middlewares/middleware";
+import {
   createUserValidator,
   updateUserValidator,
   deleteUserValidator,

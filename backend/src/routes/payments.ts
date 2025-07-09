@@ -2,7 +2,6 @@ import { Router, Request, Response } from "express";
 import Stripe from "stripe";
 import { prisma } from "../lib/prisma";
 import { authMiddleware } from "../middlewares/middleware";
-import bodyParser from "body-parser";
 
 export const router = Router();
 
@@ -63,26 +62,18 @@ router.post("/checkout", authMiddleware, async (req, res) => {
 });
 
 // webhook endpoint to handle Stripe events
-router.post(
-  "/webhook",
-  bodyParser.raw({ type: "application/json" }),
-  async (req: Request, res: Response) => {
-    const sig = req.headers["stripe-signature"] as string | undefined; // get the signature from the headers
+router.post("/webhook", async (req: Request, res: Response) => {
+  const sig = req.headers["stripe-signature"] as string | undefined; // get the signature from the headers
+  let event: Stripe.Event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig || "", process.env.STRIPE_WEBHOOK_SECRET!); // construct the event using the body and signature
+  } catch (err: any) {
+    console.error("Webhook signature verification failed:", err.message);
+    res.status(400).send(`Webhook Error: ${err.message}`);
+    return;
+  }
 
-    let event: Stripe.Event;
-    try {
-      event = stripe.webhooks.constructEvent(
-        req.body,
-        sig || "",
-        process.env.STRIPE_WEBHOOK_SECRET!
-      );
-    } catch (err: any) {
-      console.error("Webhook signature verification failed:", err.message);
-      res.status(400).send(`Webhook Error: ${err.message}`);
-      return;
-    }
-
-    try {
+  try {
       switch (event.type) {
         case "checkout.session.completed": { // checkout session is completed
           const session = event.data.object as Stripe.Checkout.Session;

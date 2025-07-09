@@ -1,14 +1,10 @@
 import express, { Request, Response } from "express";
 import passport from "passport";
 import jwt from "jsonwebtoken";
-import { authMiddleware, subscriptionMiddleware } from "../middlewares/middleware";
+import { authMiddleware } from "../middlewares/middleware";
 import { prisma } from "../lib/prisma";
 import {
-  loginValidator,
-  signupValidator,
   refreshTokenValidator,
-  resetPasswordValidator,
-  newPasswordValidator,
 } from "../validators/authValidators";
 
 export const router = express.Router();
