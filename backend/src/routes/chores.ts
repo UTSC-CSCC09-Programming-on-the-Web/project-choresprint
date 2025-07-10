@@ -3,7 +3,14 @@ import { prisma } from "../lib/prisma";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { authMiddleware, subscriptionMiddleware } from "../middlewares/middleware";
+import {
+  authMiddleware,
+  subscriptionMiddleware,
+} from "../middlewares/middleware";
+import {
+  uploadBufferToCloudinary,
+  deletePhotoFromCloudinary,
+} from "../config/cloudinary";
 import {
   createChoreValidator,
   updateChoreValidator,
@@ -12,25 +19,25 @@ import {
   uploadCompletionPhotoValidator,
 } from "../validators/choreValidators";
 
-// Create uploads folder if it doesn't exist
-const uploadDir = path.join(__dirname, "../uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-}
+// // Create uploads folder if it doesn't exist
+// const uploadDir = path.join(__dirname, "../uploads");
+// if (!fs.existsSync(uploadDir)) {
+//   fs.mkdirSync(uploadDir);
+// }
 
-// Configure multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    cb(null, uniqueName);
-  },
-});
+// // Configure multer
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, uploadDir);
+//   },
+//   filename: (req, file, cb) => {
+//     const ext = path.extname(file.originalname);
+//     const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+//     cb(null, uniqueName);
+//   },
+// });
 
-const upload = multer({ storage });
+const upload = multer({ storage: multer.memoryStorage() });
 
 export const router = Router();
 
@@ -44,11 +51,15 @@ router.post(
     const { title, description, houseId, points, dueDate, assignedToId } =
       req.body;
 
-    if (!title || !houseId) {
-      res.status(400).json({ error: "title and houseId are required." });
+    if (!req.file) {
+      res.status(400).json({ error: "File is required." });
+      return;
     }
 
-    const photoUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    const result = await uploadBufferToCloudinary(
+      req.file.buffer,
+      req.file.originalname
+    );
 
     try {
       const newChore = await prisma.chore.create({
@@ -57,7 +68,7 @@ router.post(
           description,
           houseId: Number(houseId),
           points: Number(points),
-          referencePhotoUrl: photoUrl,
+          referencePhotoUrl: (result as any).secure_url,
           dueDate: dueDate ? new Date(dueDate) : undefined,
           assignedToId: assignedToId ? Number(assignedToId) : undefined,
         },
@@ -232,6 +243,10 @@ router.delete(
       await prisma.chore.delete({
         where: { id: Number(id) },
       });
+
+      if (chore.referencePhotoUrl) {
+        await deletePhotoFromCloudinary(chore.referencePhotoUrl);
+      }
 
       res.status(204).send();
     } catch (error) {
