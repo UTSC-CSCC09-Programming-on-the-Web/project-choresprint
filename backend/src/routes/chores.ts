@@ -1,8 +1,6 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
 import {
   authMiddleware,
   subscriptionMiddleware,
@@ -18,24 +16,7 @@ import {
   deleteChoreValidator,
   uploadCompletionPhotoValidator,
 } from "../validators/choreValidators";
-
-// // Create uploads folder if it doesn't exist
-// const uploadDir = path.join(__dirname, "../uploads");
-// if (!fs.existsSync(uploadDir)) {
-//   fs.mkdirSync(uploadDir);
-// }
-
-// // Configure multer
-// const storage = multer.diskStorage({
-//   destination: (req, file, cb) => {
-//     cb(null, uploadDir);
-//   },
-//   filename: (req, file, cb) => {
-//     const ext = path.extname(file.originalname);
-//     const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-//     cb(null, uniqueName);
-//   },
-// });
+import { choreVerificationQueue } from "../queues/choreVerificationQueue";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -251,6 +232,66 @@ router.delete(
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting chore:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
+router.post(
+  "/:id/upload-completion-photo",
+  upload.single("file"),
+  uploadCompletionPhotoValidator,
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    if (!req.file) {
+      res.status(400).json({ error: "File is required." });
+      return;
+    }
+
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    try {
+      const chore = await prisma.chore.findUnique({
+        where: { id: Number(id) },
+      });
+
+      if (!chore) {
+        res.status(404).json({ error: "Chore not found" });
+        return;
+      }
+
+      if (chore.isCompleted) {
+        res.status(400).json({ error: "Chore is already completed." });
+        return;
+      }
+
+      if (chore.assignedToId !== (req.user as any).id) {
+        res.status(403).json({
+          error: "You are not assigned to this chore.",
+        });
+        return;
+      }
+
+      const result = await uploadBufferToCloudinary(
+        req.file.buffer,
+        req.file.originalname
+      );
+
+      await choreVerificationQueue.add("verify-chore", {
+        choreId: chore.id,
+        referenceUrl: chore.referencePhotoUrl,
+        proofUrl: (result as any).secure_url,
+        title: chore.title,
+        description: chore.description,
+      });
+
+      res.status(200).json({ message: "Chore verification in progress." });
+    } catch (error) {
+      console.error("Error uploading completion photo:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }

@@ -4,6 +4,7 @@ import { useUserStore } from "../stores/user";
 import { useHouseStore } from "../stores/house";
 import { useChoreStore } from "../stores/chores";
 import { useDashboard } from "../composables/useDashboard";
+import { useChoreCompletionForm } from "../composables/useForms";
 import CreateChoreForm from "../components/CreateChoreForm.vue";
 import CreateHouseForm from "../components/CreateHouseForm.vue";
 import JoinHouseForm from "../components/JoinHouseForm.vue";
@@ -33,6 +34,9 @@ const {
   markChoreComplete,
   formatDate,
 } = useDashboard();
+
+const { loading, error, success, submit, handleImageChange } =
+  useChoreCompletionForm();
 
 // Initialize on mount
 onMounted(() => {
@@ -255,11 +259,17 @@ onMounted(() => {
                 v-for="chore in choreStore.chores"
                 :key="chore.id"
                 class="chore-card"
-                :class="{ completed: chore.isCompleted }"
+                :class="{
+                  completed: chore.isCompleted,
+                  failed: !chore.isCompleted && chore.attempted,
+                }"
               >
                 <div
                   class="chore-status"
-                  :class="{ completed: chore.isCompleted }"
+                  :class="{
+                    completed: chore.isCompleted,
+                    failed: !chore.isCompleted && chore.attempted,
+                  }"
                 >
                   <span class="status-icon">✓</span>
                 </div>
@@ -289,18 +299,12 @@ onMounted(() => {
                 </div>
 
                 <div class="chore-actions">
-                  <template v-if="!chore.isCompleted">
-                    <button
-                      v-if="
-                        houseStore.isHouseOwner && chore.assignedToId != null
-                      "
-                      @click="markChoreComplete(chore.id)"
-                      class="btn btn-sm btn-success"
-                    >
-                      Complete
-                    </button>
-                  </template>
-                  <span v-else class="completed-badge">Completed</span>
+                  <span
+                    v-if="chore.attempted && !chore.isCompleted"
+                    class="failed-badge"
+                    >Failed</span
+                  >
+                  <span v-else-if="chore.isCompleted" class="completed-badge">Completed</span>
 
                   <RouterLink
                     v-if="houseStore.isHouseOwner"
@@ -368,11 +372,17 @@ onMounted(() => {
                 v-for="chore in choreStore.userChores"
                 :key="chore.id"
                 class="chore-card"
-                :class="{ completed: chore.isCompleted }"
+                :class="{
+                  completed: chore.isCompleted,
+                  failed: !chore.isCompleted && chore.attempted,
+                }"
               >
                 <div
                   class="chore-status"
-                  :class="{ completed: chore.isCompleted }"
+                  :class="{
+                    completed: chore.isCompleted,
+                    failed: !chore.isCompleted && chore.attempted,
+                  }"
                 >
                   <span class="status-icon">✓</span>
                 </div>
@@ -394,14 +404,31 @@ onMounted(() => {
                 </div>
 
                 <div class="chore-actions">
+                  <input
+                    v-if="!chore.isCompleted"
+                    type="file"
+                    @change="handleImageChange"
+                    accept="image/*"
+                  />
                   <button
                     v-if="!chore.isCompleted"
-                    @click="markChoreComplete(chore.id)"
+                    @click="submit(chore.id)"
                     class="btn btn-sm btn-success"
                   >
-                    Complete
+                    Submit Proof
                   </button>
-                  <span v-else class="completed-badge">Completed</span>
+
+                 
+                  <span
+                    v-if="chore.isCompleted && chore.attempted"
+                    class="completed-badge"
+                    >Completed</span
+                  >
+                  <span
+                    v-else-if="!chore.isCompleted && chore.attempted"
+                    class="failed-badge"
+                    >Not Verified</span
+                  >
                 </div>
               </div>
 
@@ -652,6 +679,11 @@ onMounted(() => {
   background-color: rgba(16, 185, 129, 0.05);
 }
 
+.chore-card.failed {
+  border-left-color: var(--error);
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
 .chore-status {
   width: 24px;
   height: 24px;
@@ -666,6 +698,11 @@ onMounted(() => {
 .chore-status.completed {
   background-color: var(--success);
   border-color: var(--success);
+}
+
+.chore-status.failed {
+  background-color: var(--error);
+  border-color: var(--error);
 }
 
 .status-icon {
@@ -722,8 +759,20 @@ onMounted(() => {
 
 .completed-badge {
   display: inline-block;
+  text-align: center;
   padding: var(--spacing-xs) var(--spacing-sm);
   background-color: var(--success);
+  color: var(--white);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+.failed-badge {
+  display: inline-block;
+  text-align: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--error);
   color: var(--white);
   border-radius: var(--radius-full);
   font-size: var(--font-size-xs);

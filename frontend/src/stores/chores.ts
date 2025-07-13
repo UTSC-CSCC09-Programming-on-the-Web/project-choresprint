@@ -20,6 +20,7 @@ interface Chore {
   referencePhotoUrl?: string;
   photoUrl?: string;
   verified: boolean;
+  attempted: boolean;
 }
 
 interface PaginationState {
@@ -361,6 +362,21 @@ export const useChoreStore = defineStore("chores", {
       } catch (error) {
         console.error("Error marking chore as complete:", error);
         this.error = "Failed to complete chore";
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async uploadCompletionPhoto(choreId: number, formData: FormData) {
+      this.loading = true;
+      this.error = null;
+
+      try {
+        await choresApiService.uploadCompletionPhoto(choreId, formData);
+      } catch (error) {
+        console.error("Error uploading completion photo:", error);
+        this.error = "Failed to upload completion photo";
         throw error;
       } finally {
         this.loading = false;
