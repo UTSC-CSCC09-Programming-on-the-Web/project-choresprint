@@ -4,11 +4,11 @@ import { useUserStore } from "../stores/user";
 import { useHouseStore } from "../stores/house";
 import { useChoreStore } from "../stores/chores";
 import { useDashboard } from "../composables/useDashboard";
-import { useChoreCompletionForm } from "../composables/useForms";
 import CreateChoreForm from "../components/CreateChoreForm.vue";
 import CreateHouseForm from "../components/CreateHouseForm.vue";
 import JoinHouseForm from "../components/JoinHouseForm.vue";
 import InviteCodeGenerator from "../components/InviteCodeGenerator.vue";
+import ChoreCompletionForm from "../components/ChoreCompletionForm.vue";
 import { RouterLink } from "vue-router";
 
 // Initialize stores
@@ -34,9 +34,6 @@ const {
   markChoreComplete,
   formatDate,
 } = useDashboard();
-
-const { loading, error, success, submit, handleImageChange } =
-  useChoreCompletionForm();
 
 // Initialize on mount
 onMounted(() => {
@@ -304,7 +301,9 @@ onMounted(() => {
                     class="failed-badge"
                     >Failed</span
                   >
-                  <span v-else-if="chore.isCompleted" class="completed-badge">Completed</span>
+                  <span v-else-if="chore.isCompleted" class="completed-badge"
+                    >Completed</span
+                  >
 
                   <RouterLink
                     v-if="houseStore.isHouseOwner"
@@ -404,21 +403,13 @@ onMounted(() => {
                 </div>
 
                 <div class="chore-actions">
-                  <input
+                  <ChoreCompletionForm
                     v-if="!chore.isCompleted"
-                    type="file"
-                    @change="handleImageChange"
-                    accept="image/*"
+                    :chore-id="chore.id"
+                    :chore="chore"
+                    @completed="loadDashboard"
                   />
-                  <button
-                    v-if="!chore.isCompleted"
-                    @click="submit(chore.id)"
-                    class="btn btn-sm btn-success"
-                  >
-                    Submit Proof
-                  </button>
 
-                 
                   <span
                     v-if="chore.isCompleted && chore.attempted"
                     class="completed-badge"
