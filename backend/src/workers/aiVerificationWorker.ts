@@ -3,6 +3,18 @@ import { Worker, Job } from "bullmq";
 import { redis } from "../config/redis";
 import { compareImagesWithOpenAI } from "../services/openaiService";
 import { prisma } from "../lib/prisma";
+import { io as socketClient } from "socket.io-client";
+
+// Create a socket client connection to the main backend server
+const socket = socketClient("http://localhost:4000");
+
+socket.on("connect", () => {
+  // Worker connected to main backend socket server
+});
+
+socket.on("disconnect", () => {
+  // Worker disconnected from main backend socket server
+});
 
 type JobPayload = {
   choreId: number;
@@ -31,6 +43,7 @@ const worker = new Worker(
         isCompleted: response.is_completed,
         photoUrl: proofUrl,
         attempted: true,
+        explanation: response.explanation,
       },
     });
 
@@ -49,15 +62,34 @@ const worker = new Worker(
       }
     }
 
-    return { success: true, verified: response.is_completed };
+    const returnValue = {
+      success: true,
+      verified: response.is_completed,
+      explanation: response.explanation,
+    };
+
+    return returnValue;
   },
   { connection: redis }
 );
 
 worker.on("completed", (job) => {
-  console.log(`✅ Chore ${job.id} verified`);
+  // Emit event to main backend via socket client
+  if (socket.connected) {
+    socket.emit("worker-chore-verified", {
+      choreId: job.data.choreId,
+      verified: job.returnvalue?.verified || false,
+      explanation: job.returnvalue?.explanation || "Verification completed",
+    });
+  }
 });
 
 worker.on("failed", (job, err) => {
-  console.error(`❌ Job ${job?.id} failed:`, err);
+  if (job && socket.connected) {
+    socket.emit("worker-chore-verified", {
+      choreId: job.data.choreId,
+      verified: false,
+      explanation: "Verification failed due to system error",
+    });
+  }
 });

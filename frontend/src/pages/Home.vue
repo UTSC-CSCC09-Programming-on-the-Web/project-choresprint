@@ -173,7 +173,6 @@ onMounted(async () => {
     await userStore.fetchCurrentUser();
   } catch (error) {
     // Silently handle the error - user is not authenticated
-    console.log("User not authenticated");
   }
 });
 </script>

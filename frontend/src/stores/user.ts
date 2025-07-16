@@ -33,6 +33,7 @@ export const useUserStore = defineStore("user", {
     },
     userId: (state) => state.user?.id,
     userHouseId: (state) => state.user?.houseId,
+    userPoints: (state) => state.user?.points || 0,
     isLoggedIn: (state) => state.isAuthenticated && !!state.user,
   },
 
@@ -102,6 +103,13 @@ export const useUserStore = defineStore("user", {
     updateUserPoints(points: number) {
       if (this.user) {
         this.user.points = (this.user.points || 0) + points;
+      }
+    },
+
+    // Set user points directly (for backend sync)
+    setUserPoints(points: number) {
+      if (this.user) {
+        this.user.points = points;
       }
     },
   },

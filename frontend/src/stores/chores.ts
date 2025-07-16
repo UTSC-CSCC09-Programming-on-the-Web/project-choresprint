@@ -21,6 +21,7 @@ interface Chore {
   photoUrl?: string;
   verified: boolean;
   attempted: boolean;
+  explanation?: string;
 }
 
 interface PaginationState {
@@ -246,7 +247,6 @@ export const useChoreStore = defineStore("chores", {
     async updateChore(choreId: number, choreData: Partial<Chore>) {
       this.loading = true;
       this.error = null;
-      console.log(choreData);
 
       try {
         // const { data: updatedChore } = await api.patch(
@@ -262,10 +262,11 @@ export const useChoreStore = defineStore("chores", {
         // Update in chores array
         const choreIndex = this.chores.findIndex((c) => c.id === choreId);
         if (choreIndex !== -1) {
-          this.chores[choreIndex] = {
+          const updatedChoreInArray = {
             ...this.chores[choreIndex],
             ...updatedChore,
           };
+          this.chores.splice(choreIndex, 1, updatedChoreInArray);
         }
 
         // Update in userChores array
@@ -273,10 +274,11 @@ export const useChoreStore = defineStore("chores", {
           (c) => c.id === choreId
         );
         if (userChoreIndex !== -1) {
-          this.userChores[userChoreIndex] = {
+          const updatedUserChoreInArray = {
             ...this.userChores[userChoreIndex],
             ...updatedChore,
           };
+          this.userChores.splice(userChoreIndex, 1, updatedUserChoreInArray);
         }
 
         return updatedChore;
@@ -341,7 +343,11 @@ export const useChoreStore = defineStore("chores", {
         // Update in chores array
         const choreIndex = this.chores.findIndex((c) => c.id === choreId);
         if (choreIndex !== -1) {
-          this.chores[choreIndex].isCompleted = true;
+          const updatedChoreInArray = {
+            ...this.chores[choreIndex],
+            isCompleted: true,
+          };
+          this.chores.splice(choreIndex, 1, updatedChoreInArray);
         }
 
         // Update in userChores array
@@ -349,7 +355,11 @@ export const useChoreStore = defineStore("chores", {
           (c) => c.id === choreId
         );
         if (userChoreIndex !== -1) {
-          this.userChores[userChoreIndex].isCompleted = true;
+          const updatedUserChoreInArray = {
+            ...this.userChores[userChoreIndex],
+            isCompleted: true,
+          };
+          this.userChores.splice(userChoreIndex, 1, updatedUserChoreInArray);
         }
 
         // Update points for the assigned user
@@ -418,7 +428,7 @@ export const useChoreStore = defineStore("chores", {
         // Update or add this chore to the chores array if it's not there
         const existingIndex = this.chores.findIndex((c) => c.id === choreId);
         if (existingIndex >= 0) {
-          this.chores[existingIndex] = chore;
+          this.chores.splice(existingIndex, 1, chore);
         } else {
           this.chores.push(chore);
         }
@@ -429,6 +439,72 @@ export const useChoreStore = defineStore("chores", {
         throw new Error(this.error || "");
       } finally {
         this.loading = false;
+      }
+    },
+
+    // Refresh a specific chore (for real-time updates)
+    async refreshChore(choreId: number) {
+      try {
+        const updatedChore = await choresApiService.getChore(choreId);
+
+        // Update in chores array
+        const choreIndex = this.chores.findIndex((c) => c.id === choreId);
+        if (choreIndex !== -1) {
+          this.chores.splice(choreIndex, 1, updatedChore);
+        }
+
+        // Update in userChores array
+        const userChoreIndex = this.userChores.findIndex(
+          (c) => c.id === choreId
+        );
+        if (userChoreIndex !== -1) {
+          this.userChores.splice(userChoreIndex, 1, updatedChore);
+        }
+
+        return updatedChore;
+      } catch (error) {
+        console.error("Error refreshing chore:", error);
+        throw error;
+      }
+    },
+
+    // Update chore verification status (used for real-time updates)
+    updateChoreVerificationStatus(
+      choreId: number,
+      verified: boolean,
+      explanation?: string
+    ) {
+      // Update in chores array
+      const choreIndex = this.chores.findIndex((c) => c.id === choreId);
+      if (choreIndex !== -1) {
+        // Create a completely new object to ensure reactivity
+        const updatedChore = {
+          ...this.chores[choreIndex],
+          verified,
+          isCompleted: verified,
+          attempted: true,
+          explanation: explanation || this.chores[choreIndex].explanation,
+        };
+
+        // Replace the entire array element to trigger reactivity
+        this.chores.splice(choreIndex, 1, updatedChore);
+      }
+
+      // Update in userChores array
+      const userChoreIndex = this.userChores.findIndex((c) => c.id === choreId);
+      if (userChoreIndex !== -1) {
+        // Create a completely new object to ensure reactivity
+        const updatedUserChore = {
+          ...this.userChores[userChoreIndex],
+          verified,
+          isCompleted: verified,
+          attempted: true,
+          explanation:
+            explanation || this.userChores[userChoreIndex].explanation,
+        };
+
+        // Replace the entire array element to trigger reactivity
+        this.userChores.splice(userChoreIndex, 1, updatedUserChore);
       }
     },
   },

@@ -82,6 +82,7 @@ export function useChoreManagement() {
         isCompleted: form.value.completed,
         assignedToId: form.value.assignedToId,
         dueDate: form.value.dueDate || undefined,
+        explanation: "", 
       });
 
       // Redirect to dashboard after successful update

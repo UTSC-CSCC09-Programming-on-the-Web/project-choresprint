@@ -61,6 +61,14 @@ export const updateChoreValidator = [
     .optional({ nullable: true })
     .isInt()
     .withMessage("Assigned user ID must be an integer"),
+  body("points")
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage("Points must be between 1 and 100"),
+  body("explanation")
+    .optional({ nullable: true })
+    .isString()
+    .withMessage("Explanation must be a string"),
   validateRequest,
 ];
 

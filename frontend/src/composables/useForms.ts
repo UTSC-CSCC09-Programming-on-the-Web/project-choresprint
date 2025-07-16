@@ -216,8 +216,6 @@ export function useChoreForm(houseId: number) {
         formData.append("file", form.value.referencePhoto);
       }
 
-      console.log("Creating chore with data:, formData", formData);
-
       const result = await choreStore.createChore(formData);
       success.value = true;
 
@@ -322,7 +320,6 @@ export function useChoreCompletionForm() {
   const choreStore = useChoreStore();
 
   async function submit(choreId: number) {
-    console.log("Submitting completion for choreId:", choreId);
     if (!form.value.proofPhoto) {
       error.value = "Please upload a proof photo";
       return;
@@ -334,7 +331,6 @@ export function useChoreCompletionForm() {
     try {
       const formData = new FormData();
       formData.append("file", form.value.proofPhoto);
-      console.log("Submitting completion with data:", formData);
 
       await choreStore.uploadCompletionPhoto(choreId, formData);
       success.value = true;

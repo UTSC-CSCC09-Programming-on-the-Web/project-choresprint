@@ -3,9 +3,7 @@ import passport from "passport";
 import jwt from "jsonwebtoken";
 import { authMiddleware } from "../middlewares/middleware";
 import { prisma } from "../lib/prisma";
-import {
-  refreshTokenValidator,
-} from "../validators/authValidators";
+import { refreshTokenValidator } from "../validators/authValidators";
 
 export const router = express.Router();
 
@@ -84,6 +82,7 @@ router.get("/me", authMiddleware, async (req, res) => {
         houseId: true,
         avatarUrl: true,
         subscriptionStatus: true,
+        points: true,
         // Add other fields you want to return
       },
     });

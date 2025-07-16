@@ -1,5 +1,4 @@
 import { defineStore } from "pinia";
-// import { api } from "../api";
 import { useUserStore } from "./user";
 import houseApiService from "../api/house";
 
@@ -120,8 +119,8 @@ export const useHouseStore = defineStore("house", {
       try {
         // const { data } = await api.get(`/houses/${houseId}/users`);
         const data = await houseApiService.getHouseMembers(houseId);
-        this.houseMembers = data?.data || [];
-        return data?.data;
+        this.houseMembers = data?.users || [];
+        return data?.users;
       } catch (error) {
         this.error = "Failed to fetch house members";
         throw error;

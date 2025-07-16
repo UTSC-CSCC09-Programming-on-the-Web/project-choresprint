@@ -105,7 +105,15 @@ router.patch(
   updateChoreValidator,
   async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { title, description, dueDate, isCompleted, assignedToId } = req.body;
+    const {
+      title,
+      description,
+      dueDate,
+      isCompleted,
+      assignedToId,
+      points,
+      explanation,
+    } = req.body;
 
     try {
       const chore = await prisma.chore.findUnique({
@@ -161,9 +169,11 @@ router.patch(
           assignedToId: assignedToId
             ? Number(assignedToId)
             : chore.assignedToId,
+          points: points || chore.points,
+          explanation: explanation,
         },
       });
-      if (isCompleted && updatedChore.assignedToId) {
+      if (isCompleted && updatedChore.assignedToId && !chore.isCompleted) {
         // Increment points for the user who completed the chore
         await prisma.user.update({
           where: { id: updatedChore.assignedToId },
@@ -280,6 +290,16 @@ router.post(
         req.file.buffer,
         req.file.originalname
       );
+
+      // Reset the attempted flag when a new proof is uploaded
+      await prisma.chore.update({
+        where: { id: Number(id) },
+        data: {
+          attempted: false,
+          verified: false,
+          photoUrl: (result as any).secure_url,
+        },
+      });
 
       await choreVerificationQueue.add("verify-chore", {
         choreId: chore.id,

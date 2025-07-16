@@ -1,7 +1,14 @@
 <template>
   <div class="chore-completion-form">
     <!-- File upload input -->
-    <div v-if="!chore.isCompleted" class="file-upload-section">
+    <div
+      v-if="
+        !chore.isCompleted &&
+        (!chore.attempted ||
+          (chore.attempted && !chore.isCompleted && !loading && !success))
+      "
+      class="file-upload-section"
+    >
       <input
         :id="`file-upload-${choreId}`"
         type="file"
@@ -23,7 +30,15 @@
     </div>
 
     <!-- Image preview -->
-    <div v-if="!chore.isCompleted && previewUrl" class="image-preview">
+    <div
+      v-if="
+        !chore.isCompleted &&
+        (!chore.attempted ||
+          (chore.attempted && !chore.isCompleted && !loading && !success)) &&
+        previewUrl
+      "
+      class="image-preview"
+    >
       <img :src="previewUrl" alt="Proof preview" class="preview-image" />
       <button
         @click="removeImage"
@@ -46,7 +61,14 @@
     </div>
 
     <!-- Action buttons -->
-    <div v-if="!chore.isCompleted" class="action-buttons">
+    <div
+      v-if="
+        !chore.isCompleted &&
+        (!chore.attempted ||
+          (chore.attempted && !chore.isCompleted && !loading && !success))
+      "
+      class="action-buttons"
+    >
       <button
         @click="submitCompletion"
         :disabled="!form.proofPhoto || loading"
@@ -54,16 +76,44 @@
         :class="{ loading: loading }"
       >
         <span v-if="loading" class="loader-inline"></span>
-        <span v-else>Submit Proof</span>
+        <span v-else>{{ chore.attempted ? "Try Again" : "Submit Proof" }}</span>
       </button>
     </div>
 
     <!-- Verification status -->
-    <!-- Show pending state if proof was just submitted (loading) or if submitted but not attempted yet -->
+    <!-- Show completed state if attempted and completed (highest priority) -->
+    <div v-if="chore.isCompleted" class="verification-status completed">
+      <div class="status-indicator completed">
+        <span class="status-icon">✅</span>
+        <span class="status-text">Verification Passed</span>
+      </div>
+      <p class="status-description">
+        {{
+          chore.explanation ||
+          "Great job! Your chore has been successfully completed and verified."
+        }}
+      </p>
+    </div>
+
+    <!-- Show failed state if attempted but not completed (and not currently submitting) -->
     <div
-      v-if="loading || (success && !chore.attempted)"
-      class="verification-status pending"
+      v-else-if="chore.attempted && !chore.isCompleted && !loading && !success"
+      class="verification-status failed"
     >
+      <div class="status-indicator failed">
+        <span class="status-icon">❌</span>
+        <span class="status-text">Verification Failed</span>
+      </div>
+      <p class="status-description">
+        {{
+          chore.explanation ||
+          "Your proof did not meet the requirements. Please upload a new photo and try again."
+        }}
+      </p>
+    </div>
+
+    <!-- Show pending state if proof was just submitted (loading) or if submitted successfully -->
+    <div v-else-if="loading || success" class="verification-status pending">
       <div class="status-indicator pending">
         <span class="status-icon">⏳</span>
         <span class="status-text">Pending Verification</span>
@@ -77,7 +127,7 @@
 </template>
 
 <script setup>
-import { ref, onUnmounted, computed } from "vue";
+import { ref, onUnmounted, computed, watch } from "vue";
 import { useChoreCompletionForm } from "../composables/useForms";
 
 // Props
@@ -93,7 +143,7 @@ const props = defineProps({
 });
 
 // Emits
-const emit = defineEmits(["completed", "error"]);
+const emit = defineEmits(["completed", "error", "verification-update"]);
 
 // Use the composable for chore completion
 const {
@@ -107,6 +157,19 @@ const {
 
 // Additional state for image preview (not in composable)
 const previewUrl = ref(null);
+
+// Watch for chore completion to reset form state
+watch(
+  () => props.chore.isCompleted,
+  (newCompleted, oldCompleted) => {
+    if (newCompleted) {
+      // Reset form state when chore is completed
+      success.value = false;
+      loading.value = false;
+      error.value = null;
+    }
+  }
+);
 
 // Computed
 const isVerificationPending = computed(() => {
@@ -163,9 +226,6 @@ async function submitCompletion() {
 
     // Clear form after successful submission
     removeImage();
-
-    // Emit completion event
-    emit("completed", props.choreId);
   } catch (err) {
     emit("error", err);
   }
@@ -300,6 +360,9 @@ onUnmounted(() => {
   padding: var(--spacing-md);
   border-radius: var(--radius-md);
   border-left: 4px solid;
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .verification-status.failed {
@@ -354,6 +417,9 @@ onUnmounted(() => {
   color: var(--gray);
   font-size: var(--font-size-sm);
   margin: 0;
+  line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .alert {

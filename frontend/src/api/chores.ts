@@ -13,10 +13,7 @@ interface ChoresApiService {
     userId: number,
     params: { assignedTo: number; limit: number; cursor: number }
   ) => Promise<any>;
-  uploadCompletionPhoto: (
-    choreId: number,
-    formData: FormData
-  ) => Promise<any>;
+  uploadCompletionPhoto: (choreId: number, formData: FormData) => Promise<any>;
 }
 
 let choresApiService: ChoresApiService = {} as ChoresApiService;
@@ -99,11 +96,15 @@ choresApiService.uploadCompletionPhoto = async function (
   formData: FormData
 ) {
   try {
-    const response = await api.post(`/chores/${choreId}/upload-completion-photo`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const response = await api.post(
+      `/chores/${choreId}/upload-completion-photo`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
     return response.data;
   } catch (error) {
     console.error("Error uploading completion photo:", error);

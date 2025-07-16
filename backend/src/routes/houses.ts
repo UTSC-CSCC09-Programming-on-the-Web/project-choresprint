@@ -1,7 +1,10 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { v4 as uuidv4 } from "uuid";
-import { authMiddleware, subscriptionMiddleware } from "../middlewares/middleware";
+import {
+  authMiddleware,
+  subscriptionMiddleware,
+} from "../middlewares/middleware";
 import {
   createHouseValidator,
   updateHouseValidator,
@@ -190,17 +193,18 @@ router.delete(
       }
 
       if (house.createdById !== (req.user as any).id) {
-        res.status(403).json({ // raise 403 forbidden
+        res.status(403).json({
+          // raise 403 forbidden
           error: "Forbidden: You do not have permission to delete this house.",
         });
         return;
       }
-      
+
       await prisma.invitation.deleteMany({ where: { houseId: house.id } });
       await prisma.chore.deleteMany({ where: { houseId: house.id } });
       await prisma.user.updateMany({
         where: { houseId: house.id },
-        data: { houseId: null, points: 0 }, 
+        data: { houseId: null, points: 0 },
       });
       await prisma.house.delete({ where: { id: house.id } });
       res.status(204).send();
@@ -260,7 +264,6 @@ router.get(
         });
         return;
       }
-      
 
       // Define query parameters
       const validatedSortBy =
@@ -455,9 +458,6 @@ router.post("/invitations/:code/use", async (req: Request, res: Response) => {
 
 router.get("/:id/users", async (req: Request, res: Response) => {
   const { id } = req.params;
-  const page = parseInt(req.query.page as string) || 1;
-  const limit = parseInt(req.query.limit as string) || 10;
-  const skip = (page - 1) * limit;
 
   try {
     if (!req.user) {
@@ -480,13 +480,6 @@ router.get("/:id/users", async (req: Request, res: Response) => {
       return;
     }
 
-    // Get total count for pagination metadata
-    const totalCount = await prisma.user.count({
-      where: { houseId: Number(id) },
-    });
-
-    const totalPages = Math.ceil(totalCount / limit);
-
     const users = await prisma.user.findMany({
       where: { houseId: Number(id) },
       select: {
@@ -494,48 +487,17 @@ router.get("/:id/users", async (req: Request, res: Response) => {
         name: true,
         email: true,
         avatarUrl: true,
-        chores: {
-          where: {
-            isCompleted: true,
-          },
-          select: {
-            points: true,
-          },
-        },
+        points: true,
       },
-      skip,
-      take: limit,
       orderBy: {
-        name: "asc", // Order by name since we can't order by points directly
+        name: "asc",
       },
-    });
-
-    // Calculate points for each user and map the response
-    const usersWithPoints = users.map(user => {
-      const totalPoints = user.chores.reduce((sum, chore) => sum + chore.points, 0);
-      return {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        avatarUrl: user.avatarUrl,
-        points: totalPoints,
-      };
     });
 
     // Sort by points in descending order
-    usersWithPoints.sort((a, b) => b.points - a.points);
+    // users.sort((a, b) => b.points - a.points);
 
-    res.json({
-      data: usersWithPoints,
-      pagination: {
-        totalCount,
-        totalPages,
-        currentPage: page,
-        pageSize: limit,
-        hasNext: page < totalPages,
-        hasPrevious: page > 1,
-      },
-    });
+    res.json({ users });
   } catch (error) {
     console.error("Error fetching house users:", error);
     res.status(500).json({ error: "Internal Server Error" });

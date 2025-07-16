@@ -1,9 +1,10 @@
 <script setup>
-import { onMounted } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { useUserStore } from "../stores/user";
 import { useHouseStore } from "../stores/house";
 import { useChoreStore } from "../stores/chores";
 import { useDashboard } from "../composables/useDashboard";
+import { useSocket } from "../composables/useSocket";
 import CreateChoreForm from "../components/CreateChoreForm.vue";
 import CreateHouseForm from "../components/CreateHouseForm.vue";
 import JoinHouseForm from "../components/JoinHouseForm.vue";
@@ -15,6 +16,9 @@ import { RouterLink } from "vue-router";
 const userStore = useUserStore();
 const houseStore = useHouseStore();
 const choreStore = useChoreStore();
+
+// Initialize socket
+const { on, off } = useSocket();
 
 // Get dashboard composable
 const {
@@ -35,9 +39,67 @@ const {
   formatDate,
 } = useDashboard();
 
+// Track processed verification events to prevent duplicates
+const processedVerifications = new Set();
+
+// Method to handle chore verification updates
+function handleVerificationUpdate(data) {
+  // Prevent duplicate processing
+  const verificationKey = `${data.choreId}-${Date.now()}`;
+  if (processedVerifications.has(data.choreId)) {
+    return;
+  }
+
+  processedVerifications.add(data.choreId);
+
+  // Clean up processed verification tracking after 30 seconds
+  // NOTE: This only cleans up duplicate prevention, not the explanations
+  setTimeout(() => {
+    processedVerifications.delete(data.choreId);
+  }, 30000);
+
+  // Find the chore to get its points for optimistic update
+  const chore =
+    choreStore.chores.find((c) => c.id === data.choreId) ||
+    choreStore.userChores.find((c) => c.id === data.choreId);
+
+  // Update the chore using the proper store method to ensure reactivity
+  choreStore.updateChoreVerificationStatus(
+    data.choreId,
+    data.verified,
+    data.explanation
+  );
+
+  if (chore && data.verified && chore.points) {
+    // Only update points if this is the current user's chore
+    if (chore.assignedToId === userStore.userId) {
+      // Optimistically update user points immediately
+      userStore.updateUserPoints(chore.points);
+      houseStore.updateMemberPoints(userStore.userId, chore.points);
+
+      // Add visual feedback for points update
+      const pointsElement = document.querySelector(".points-value");
+      if (pointsElement) {
+        pointsElement.classList.add("updated");
+        setTimeout(() => {
+          pointsElement.classList.remove("updated");
+        }, 500);
+      }
+    }
+  }
+}
+
 // Initialize on mount
 onMounted(() => {
   loadDashboard();
+
+  // Listen for chore verification events
+  on("chore-verified", handleVerificationUpdate);
+});
+
+// Clean up on unmount
+onUnmounted(() => {
+  off("chore-verified", handleVerificationUpdate);
 });
 </script>
 
@@ -103,7 +165,15 @@ onMounted(() => {
     <!-- Dashboard with house -->
     <div v-else class="container">
       <div class="dashboard-header">
-        <h1 class="dashboard-title">Dashboard</h1>
+        <div class="user-welcome">
+          <h1 class="dashboard-title">
+            Welcome back, {{ userStore.userName }}!
+          </h1>
+          <div class="user-points-display">
+            <span class="points-label">Your Points:</span>
+            <span class="points-value">{{ userStore.userPoints }} pts</span>
+          </div>
+        </div>
         <p class="dashboard-subtitle">Manage your house and chores</p>
       </div>
 
@@ -403,12 +473,7 @@ onMounted(() => {
                 </div>
 
                 <div class="chore-actions">
-                  <ChoreCompletionForm
-                    v-if="!chore.isCompleted"
-                    :chore-id="chore.id"
-                    :chore="chore"
-                    @completed="loadDashboard"
-                  />
+                  <ChoreCompletionForm :chore-id="chore.id" :chore="chore" />
 
                   <span
                     v-if="chore.isCompleted && chore.attempted"
@@ -515,8 +580,63 @@ onMounted(() => {
   margin-bottom: var(--spacing-xl);
 }
 
-.dashboard-title {
+.user-welcome {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
   margin-bottom: var(--spacing-xs);
+}
+
+.user-points-display {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--success) 100%);
+  color: var(--white);
+  border-radius: var(--radius-lg);
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.user-points-display:hover {
+  transform: translateY(-2px);
+}
+
+.points-label {
+  font-size: var(--font-size-sm);
+  opacity: 0.9;
+}
+
+.points-value {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.points-value.updated {
+  animation: pointsUpdate 0.5s ease;
+}
+
+@keyframes pointsUpdate {
+  0% {
+    transform: scale(1);
+    color: var(--white);
+  }
+  50% {
+    transform: scale(1.1);
+    color: var(--warning);
+  }
+  100% {
+    transform: scale(1);
+    color: var(--white);
+  }
+}
+
+.dashboard-title {
+  margin-bottom: 0;
+  flex: 1;
 }
 
 .dashboard-subtitle {
@@ -535,6 +655,10 @@ onMounted(() => {
 }
 
 .chores-card {
+  grid-column: span 2;
+}
+
+.your-chores-card {
   grid-column: span 2;
 }
 
@@ -746,6 +870,9 @@ onMounted(() => {
   flex-direction: column;
   gap: var(--spacing-sm);
   margin-left: var(--spacing-md);
+  min-width: 200px;
+  max-width: 300px;
+  flex-shrink: 0;
 }
 
 .completed-badge {
@@ -910,7 +1037,8 @@ onMounted(() => {
   }
 
   .house-info-card,
-  .chores-card {
+  .chores-card,
+  .your-chores-card {
     grid-column: span 1;
   }
 
