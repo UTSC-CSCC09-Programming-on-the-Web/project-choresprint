@@ -64,8 +64,7 @@ const {
   loading,
   error,
   success,
-  createHouse,
-  resetForm
+  createHouse
 } = useHouseForm();
 
 // Handle form submission

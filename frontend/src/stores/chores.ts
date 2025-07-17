@@ -249,11 +249,7 @@ export const useChoreStore = defineStore("chores", {
       this.error = null;
 
       try {
-        // const { data: updatedChore } = await api.patch(
-        //   `/chores/${choreId}`,
-        //   choreData
-        // );
-
+        const existing = this.getChoreById(choreId);
         const updatedChore = await choresApiService.updateChore(
           choreId,
           choreData
@@ -280,7 +276,16 @@ export const useChoreStore = defineStore("chores", {
           };
           this.userChores.splice(userChoreIndex, 1, updatedUserChoreInArray);
         }
+        // Adjust points if completion status changed
+        if (existing) {
+          const houseStore = useHouseStore();
 
+          if (!existing.isCompleted && updatedChore.isCompleted && updatedChore.assignedToId) {
+            houseStore.updateMemberPoints(updatedChore.assignedToId, updatedChore.points || 0);
+          } else if (existing.isCompleted && !updatedChore.isCompleted && existing.assignedToId) {
+            houseStore.updateMemberPoints(existing.assignedToId, -(existing.points || 0));
+          }
+        }
         return updatedChore;
       } catch (error) {
         this.error = "Failed to update chore";

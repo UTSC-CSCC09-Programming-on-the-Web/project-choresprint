@@ -105,8 +105,8 @@ export function useJoinHouseForm() {
     resetForm,
   };
 }
-
-export function useChoreForm(houseId: number) {
+export function useChoreForm() {
+  const houseStore = useHouseStore();
   const form = ref({
     title: "",
     description: "",
@@ -171,6 +171,11 @@ export function useChoreForm(houseId: number) {
       return false;
     }
 
+    if (!form.value.referencePhoto) {
+      error.value = "Reference image is required";
+      return false;
+    }
+
     loading.value = true;
     error.value = null;
 
@@ -198,11 +203,17 @@ export function useChoreForm(houseId: number) {
       //     choreData.referencePhotoUrl = uploadResult.url;
       //   }
 
+      const currentHouseId = houseStore.currentHouse?.id;
+      if (!currentHouseId) {
+        error.value = "No house selected";
+        return false;
+      }
+
       const formData = new FormData();
       formData.append("title", form.value.title);
       formData.append("description", form.value.description || "");
       formData.append("points", String(form.value.points));
-      formData.append("houseId", String(houseId));
+      formData.append("houseId", String(currentHouseId));
 
       if (form.value.dueDate) {
         formData.append("dueDate", form.value.dueDate);

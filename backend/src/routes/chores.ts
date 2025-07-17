@@ -184,6 +184,17 @@ router.patch(
           },
         });
       }
+      if (!isCompleted && chore.isCompleted && chore.assignedToId) {
+        // If reverting completion, subtract points from the original assignee
+        await prisma.user.update({
+          where: { id: chore.assignedToId },
+          data: {
+            points: {
+              decrement: chore.points,
+            },
+          },
+        });
+      }
       res.json(updatedChore);
     } catch (error) {
       console.error("Error updating chore:", error);

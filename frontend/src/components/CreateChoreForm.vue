@@ -189,7 +189,7 @@ const {
   resetImage,
   createChore,
   resetForm,
-} = useChoreForm(houseStore.currentHouse?.id || 0);
+} = useChoreForm();
 
 // Load house members when component mounts
 onMounted(async () => {

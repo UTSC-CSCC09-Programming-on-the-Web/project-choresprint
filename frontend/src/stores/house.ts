@@ -198,8 +198,7 @@ export const useHouseStore = defineStore("house", {
           userStore.user.houseId = null;
         }
 
-        this.currentHouse = null;
-        this.houseMembers = [];
+        this.resetState();
         this.showCreateJoin = true;
 
         return true;
@@ -228,8 +227,7 @@ export const useHouseStore = defineStore("house", {
           userStore.user.houseId = null;
         }
 
-        this.currentHouse = null;
-        this.houseMembers = [];
+        this.resetState();
         this.showCreateJoin = true;
 
         return true;
@@ -268,8 +266,13 @@ export const useHouseStore = defineStore("house", {
         (member) => member.id === memberId
       );
       if (index !== -1) {
-        this.houseMembers[index].points =
-          (this.houseMembers[index].points || 0) + points;
+        const updatedPoints = (this.houseMembers[index].points || 0) + points;
+        this.houseMembers[index].points = updatedPoints;
+
+        const userStore = useUserStore();
+        if (userStore.userId === memberId) {
+          userStore.setUserPoints(updatedPoints);
+        }
       }
     },
 

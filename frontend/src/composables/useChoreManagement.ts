@@ -71,6 +71,11 @@ export function useChoreManagement() {
       return;
     }
 
+    if (form.value.completed && !form.value.assignedToId) {
+      error.value = "Chore must be assigned before marking complete";
+      return;
+    }
+
     saving.value = true;
     error.value = "";
 
