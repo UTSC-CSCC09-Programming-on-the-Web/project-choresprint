@@ -71,6 +71,11 @@ export function useChoreManagement() {
       return;
     }
 
+    if (form.value.completed && !form.value.assignedToId) {
+      error.value = "Chore must be assigned before marking complete";
+      return;
+    }
+
     saving.value = true;
     error.value = "";
 
@@ -82,6 +87,7 @@ export function useChoreManagement() {
         isCompleted: form.value.completed,
         assignedToId: form.value.assignedToId,
         dueDate: form.value.dueDate || undefined,
+        explanation: "", 
       });
 
       // Redirect to dashboard after successful update

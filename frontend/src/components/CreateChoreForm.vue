@@ -94,10 +94,7 @@
 
         <!-- Reference Image upload -->
         <div class="form-group">
-          <label class="form-label">
-            Reference Image
-            <span class="optional-label">(Optional)</span>
-          </label>
+          <label class="form-label"> Reference Image </label>
           <div class="file-input-wrapper">
             <label for="file-upload" class="file-upload-label">
               <span v-if="!previewUrl">Choose image</span>
@@ -110,6 +107,7 @@
               @change="handleImageChange"
               accept="image/*"
               class="file-input"
+              required
             />
           </div>
 
@@ -169,7 +167,6 @@ import { computed, onMounted } from "vue";
 import { useHouseStore } from "../stores/house";
 import { useChoreForm } from "../composables/useForms";
 
-
 const emit = defineEmits(["created"]);
 
 // Initialize stores
@@ -192,7 +189,7 @@ const {
   resetImage,
   createChore,
   resetForm,
-} = useChoreForm(houseStore.currentHouse?.id || 0);
+} = useChoreForm();
 
 // Load house members when component mounts
 onMounted(async () => {

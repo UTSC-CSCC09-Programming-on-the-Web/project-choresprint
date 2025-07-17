@@ -8,7 +8,7 @@
  * This can be extended to use environment variables in the future
  */
 export const getBackendUrl = (): string => {
-  return "http://localhost:4000";
+  return import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
 };
 
 /**

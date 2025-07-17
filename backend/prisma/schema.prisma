@@ -73,6 +73,8 @@ model Chore {
 
   photoUrl      String?   // for uploaded verification photo
   verified      Boolean   @default(false) // AI decision
+  attempted     Boolean   @default(false)
+  explanation   String?
   points        Int       @default(10)
   createdAt     DateTime  @default(now())
 }

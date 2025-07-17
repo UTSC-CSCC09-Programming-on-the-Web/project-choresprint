@@ -1,19 +1,24 @@
 <script setup>
-import { onMounted } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { useUserStore } from "../stores/user";
 import { useHouseStore } from "../stores/house";
 import { useChoreStore } from "../stores/chores";
 import { useDashboard } from "../composables/useDashboard";
+import { useSocket } from "../composables/useSocket";
 import CreateChoreForm from "../components/CreateChoreForm.vue";
 import CreateHouseForm from "../components/CreateHouseForm.vue";
 import JoinHouseForm from "../components/JoinHouseForm.vue";
 import InviteCodeGenerator from "../components/InviteCodeGenerator.vue";
+import ChoreCompletionForm from "../components/ChoreCompletionForm.vue";
 import { RouterLink } from "vue-router";
 
 // Initialize stores
 const userStore = useUserStore();
 const houseStore = useHouseStore();
 const choreStore = useChoreStore();
+
+// Initialize socket
+const { on, off } = useSocket();
 
 // Get dashboard composable
 const {
@@ -34,9 +39,52 @@ const {
   formatDate,
 } = useDashboard();
 
+
+// Method to handle chore verification updates
+function handleVerificationUpdate(data) {
+
+  // Find the chore to get its points for optimistic update
+  const chore =
+    choreStore.chores.find((c) => c.id === data.choreId) ||
+    choreStore.userChores.find((c) => c.id === data.choreId);
+
+  // Update the chore using the proper store method to ensure reactivity
+  choreStore.updateChoreVerificationStatus(
+    data.choreId,
+    data.verified,
+    data.explanation
+  );
+
+  if (chore && data.verified && chore.points) {
+    // Only update points if this is the current user's chore
+    if (chore.assignedToId === userStore.userId) {
+      // Optimistically update user points immediately
+      userStore.updateUserPoints(chore.points);
+      houseStore.updateMemberPoints(userStore.userId, chore.points);
+
+      // Add visual feedback for points update
+      const pointsElement = document.querySelector(".points-value");
+      if (pointsElement) {
+        pointsElement.classList.add("updated");
+        setTimeout(() => {
+          pointsElement.classList.remove("updated");
+        }, 500);
+      }
+    }
+  }
+}
+
 // Initialize on mount
 onMounted(() => {
   loadDashboard();
+
+  // Listen for chore verification events
+  on("chore-verified", handleVerificationUpdate);
+});
+
+// Clean up on unmount
+onUnmounted(() => {
+  off("chore-verified", handleVerificationUpdate);
 });
 </script>
 
@@ -102,7 +150,15 @@ onMounted(() => {
     <!-- Dashboard with house -->
     <div v-else class="container">
       <div class="dashboard-header">
-        <h1 class="dashboard-title">Dashboard</h1>
+        <div class="user-welcome">
+          <h1 class="dashboard-title">
+            Welcome back, {{ userStore.userName }}!
+          </h1>
+          <div class="user-points-display">
+            <span class="points-label">Your Points:</span>
+            <span class="points-value">{{ userStore.userPoints }} pts</span>
+          </div>
+        </div>
         <p class="dashboard-subtitle">Manage your house and chores</p>
       </div>
 
@@ -255,11 +311,17 @@ onMounted(() => {
                 v-for="chore in choreStore.chores"
                 :key="chore.id"
                 class="chore-card"
-                :class="{ completed: chore.isCompleted }"
+                :class="{
+                  completed: chore.isCompleted,
+                  failed: !chore.isCompleted && chore.attempted,
+                }"
               >
                 <div
                   class="chore-status"
-                  :class="{ completed: chore.isCompleted }"
+                  :class="{
+                    completed: chore.isCompleted,
+                    failed: !chore.isCompleted && chore.attempted,
+                  }"
                 >
                   <span class="status-icon">✓</span>
                 </div>
@@ -289,18 +351,14 @@ onMounted(() => {
                 </div>
 
                 <div class="chore-actions">
-                  <template v-if="!chore.isCompleted">
-                    <button
-                      v-if="
-                        houseStore.isHouseOwner && chore.assignedToId != null
-                      "
-                      @click="markChoreComplete(chore.id)"
-                      class="btn btn-sm btn-success"
-                    >
-                      Complete
-                    </button>
-                  </template>
-                  <span v-else class="completed-badge">Completed</span>
+                  <span
+                    v-if="chore.attempted && !chore.isCompleted"
+                    class="failed-badge"
+                    >Failed</span
+                  >
+                  <span v-else-if="chore.isCompleted" class="completed-badge"
+                    >Completed</span
+                  >
 
                   <RouterLink
                     v-if="houseStore.isHouseOwner"
@@ -368,11 +426,17 @@ onMounted(() => {
                 v-for="chore in choreStore.userChores"
                 :key="chore.id"
                 class="chore-card"
-                :class="{ completed: chore.isCompleted }"
+                :class="{
+                  completed: chore.isCompleted,
+                  failed: !chore.isCompleted && chore.attempted,
+                }"
               >
                 <div
                   class="chore-status"
-                  :class="{ completed: chore.isCompleted }"
+                  :class="{
+                    completed: chore.isCompleted,
+                    failed: !chore.isCompleted && chore.attempted,
+                  }"
                 >
                   <span class="status-icon">✓</span>
                 </div>
@@ -394,14 +458,18 @@ onMounted(() => {
                 </div>
 
                 <div class="chore-actions">
-                  <button
-                    v-if="!chore.isCompleted"
-                    @click="markChoreComplete(chore.id)"
-                    class="btn btn-sm btn-success"
+                  <ChoreCompletionForm :chore-id="chore.id" :chore="chore" />
+
+                  <span
+                    v-if="chore.isCompleted && chore.attempted"
+                    class="completed-badge"
+                    >Completed</span
                   >
-                    Complete
-                  </button>
-                  <span v-else class="completed-badge">Completed</span>
+                  <span
+                    v-else-if="!chore.isCompleted && chore.attempted"
+                    class="failed-badge"
+                    >Not Verified</span
+                  >
                 </div>
               </div>
 
@@ -497,8 +565,63 @@ onMounted(() => {
   margin-bottom: var(--spacing-xl);
 }
 
-.dashboard-title {
+.user-welcome {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
   margin-bottom: var(--spacing-xs);
+}
+
+.user-points-display {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--success) 100%);
+  color: var(--white);
+  border-radius: var(--radius-lg);
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.user-points-display:hover {
+  transform: translateY(-2px);
+}
+
+.points-label {
+  font-size: var(--font-size-sm);
+  opacity: 0.9;
+}
+
+.points-value {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.points-value.updated {
+  animation: pointsUpdate 0.5s ease;
+}
+
+@keyframes pointsUpdate {
+  0% {
+    transform: scale(1);
+    color: var(--white);
+  }
+  50% {
+    transform: scale(1.1);
+    color: var(--warning);
+  }
+  100% {
+    transform: scale(1);
+    color: var(--white);
+  }
+}
+
+.dashboard-title {
+  margin-bottom: 0;
+  flex: 1;
 }
 
 .dashboard-subtitle {
@@ -517,6 +640,10 @@ onMounted(() => {
 }
 
 .chores-card {
+  grid-column: span 2;
+}
+
+.your-chores-card {
   grid-column: span 2;
 }
 
@@ -652,6 +779,11 @@ onMounted(() => {
   background-color: rgba(16, 185, 129, 0.05);
 }
 
+.chore-card.failed {
+  border-left-color: var(--error);
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
 .chore-status {
   width: 24px;
   height: 24px;
@@ -666,6 +798,11 @@ onMounted(() => {
 .chore-status.completed {
   background-color: var(--success);
   border-color: var(--success);
+}
+
+.chore-status.failed {
+  background-color: var(--error);
+  border-color: var(--error);
 }
 
 .status-icon {
@@ -718,12 +855,27 @@ onMounted(() => {
   flex-direction: column;
   gap: var(--spacing-sm);
   margin-left: var(--spacing-md);
+  min-width: 200px;
+  max-width: 300px;
+  flex-shrink: 0;
 }
 
 .completed-badge {
   display: inline-block;
+  text-align: center;
   padding: var(--spacing-xs) var(--spacing-sm);
   background-color: var(--success);
+  color: var(--white);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+.failed-badge {
+  display: inline-block;
+  text-align: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--error);
   color: var(--white);
   border-radius: var(--radius-full);
   font-size: var(--font-size-xs);
@@ -870,7 +1022,8 @@ onMounted(() => {
   }
 
   .house-info-card,
-  .chores-card {
+  .chores-card,
+  .your-chores-card {
     grid-column: span 1;
   }
 

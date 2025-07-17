@@ -105,8 +105,8 @@ export function useJoinHouseForm() {
     resetForm,
   };
 }
-
-export function useChoreForm(houseId: number) {
+export function useChoreForm() {
+  const houseStore = useHouseStore();
   const form = ref({
     title: "",
     description: "",
@@ -171,6 +171,11 @@ export function useChoreForm(houseId: number) {
       return false;
     }
 
+    if (!form.value.referencePhoto) {
+      error.value = "Reference image is required";
+      return false;
+    }
+
     loading.value = true;
     error.value = null;
 
@@ -198,11 +203,17 @@ export function useChoreForm(houseId: number) {
       //     choreData.referencePhotoUrl = uploadResult.url;
       //   }
 
+      const currentHouseId = houseStore.currentHouse?.id;
+      if (!currentHouseId) {
+        error.value = "No house selected";
+        return false;
+      }
+
       const formData = new FormData();
       formData.append("title", form.value.title);
       formData.append("description", form.value.description || "");
       formData.append("points", String(form.value.points));
-      formData.append("houseId", String(houseId));
+      formData.append("houseId", String(currentHouseId));
 
       if (form.value.dueDate) {
         formData.append("dueDate", form.value.dueDate);
@@ -215,8 +226,6 @@ export function useChoreForm(houseId: number) {
       if (form.value.referencePhoto) {
         formData.append("file", form.value.referencePhoto);
       }
-
-      console.log("Creating chore with data:, formData", formData);
 
       const result = await choreStore.createChore(formData);
       success.value = true;
@@ -307,5 +316,74 @@ export function useInviteCodeGenerator() {
     copied,
     generateInviteCode,
     copyToClipboard,
+  };
+}
+
+export function useChoreCompletionForm() {
+  const form = ref({
+    proofPhoto: null as File | null,
+  });
+
+  const loading = ref(false);
+  const error = ref<string | null>(null);
+  const success = ref(false);
+
+  const choreStore = useChoreStore();
+
+  async function submit(choreId: number) {
+    if (!form.value.proofPhoto) {
+      error.value = "Please upload a proof photo";
+      return;
+    }
+
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", form.value.proofPhoto);
+
+      await choreStore.uploadCompletionPhoto(choreId, formData);
+      success.value = true;
+
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        success.value = false;
+      }, 3000);
+    } catch (err: any) {
+      error.value = err.message || "Failed to submit completion";
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  function handleImageChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        error.value = "Image size exceeds 5MB limit";
+        return;
+      }
+
+      form.value.proofPhoto = file;
+
+      // Create preview URL
+      // if (previewUrl.value) {
+      //   URL.revokeObjectURL(previewUrl.value);
+      // }
+      // previewUrl.value = URL.createObjectURL(file);
+    }
+  }
+
+  return {
+    form,
+    loading,
+    error,
+    success,
+    submit,
+    handleImageChange,
   };
 }

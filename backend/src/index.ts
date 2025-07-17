@@ -3,7 +3,9 @@ import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
+import http from "http";
 import { prisma } from "./lib/prisma";
+import { initSocket } from "./config/socket";
 import passport from "./config/passport";
 
 import { router as choresRouter } from "./routes/chores";
@@ -14,10 +16,19 @@ import { router as paymentsRouter } from "./routes/payments";
 
 dotenv.config();
 const app = express();
+const server = http.createServer(app);
+
+initSocket(server);
+
+// import "./workers/aiVerificationWorker";
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: [
+      process.env.CLIENT_URL || "http://localhost:5173",
+      "https://www.choresprint.app",
+      "http://www.choresprint.app",
+    ],
     credentials: true, // Important for cookies to work cross-domain
   })
 );
@@ -34,7 +45,7 @@ const PORT = process.env.PORT || 4000;
 prisma
   .$connect()
   .then(() => {
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server running at http://localhost:${PORT}`);
     });
   })

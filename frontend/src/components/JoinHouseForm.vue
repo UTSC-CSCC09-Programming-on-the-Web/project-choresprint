@@ -69,8 +69,7 @@ const {
   loading,
   error,
   success,
-  joinHouse,
-  resetForm
+  joinHouse
 } = useJoinHouseForm();
 
 // Check for invitation code in route params
