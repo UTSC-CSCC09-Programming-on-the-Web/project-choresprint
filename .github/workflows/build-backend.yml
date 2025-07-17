@@ -1,6 +1,7 @@
 name: Publish Backend to GHCR
 
 on:
+  workflow_dispatch:
   push:
     # Only run this workflow if it is a commit to main.
     branches:
