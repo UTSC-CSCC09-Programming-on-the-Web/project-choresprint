@@ -5,7 +5,7 @@ let socket: Socket | null = null;
 export function useSocket() {
   // Create socket connection if it doesn't exist
   if (!socket) {
-    socket = io("http://localhost:4000");
+    socket = io(import.meta.env.VITE_BACKEND_URL || "http://localhost:4000");
   }
 
   const on = (event: string, callback: (...args: any[]) => void) => {
