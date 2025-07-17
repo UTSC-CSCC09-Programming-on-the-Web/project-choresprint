@@ -24,7 +24,11 @@ initSocket(server);
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: [
+      process.env.CLIENT_URL || "http://localhost:5173",
+      "https://www.choresprint.app",
+      "http://www.choresprint.app",
+    ],
     credentials: true, // Important for cookies to work cross-domain
   })
 );

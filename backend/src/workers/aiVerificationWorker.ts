@@ -6,7 +6,7 @@ import { prisma } from "../lib/prisma";
 import { io as socketClient } from "socket.io-client";
 
 // Create a socket client connection to the main backend server
-const socket = socketClient("http://localhost:4000");
+const socket = socketClient(process.env.SOCKET_URL || "http://localhost:4000");
 
 socket.on("connect", () => {
   // Worker connected to main backend socket server

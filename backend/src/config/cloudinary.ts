@@ -26,7 +26,7 @@ export async function uploadBufferToCloudinary(
         use_filename: true,
         unique_filename: false,
       },
-      (error, result) => {
+      (error: any, result: any) => {
         if (error) return reject(error);
         resolve(result);
       }
