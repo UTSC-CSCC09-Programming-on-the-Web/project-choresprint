@@ -28,6 +28,13 @@ const worker = new Worker(
   "chore-verification",
   async (job: Job<JobPayload>) => {
     const { choreId, referenceUrl, proofUrl, title, description } = job.data;
+    console.log("Processing chore verification job:", {
+      choreId,
+      referenceUrl,
+      proofUrl,
+      title,
+      description,
+    });
 
     const response = await compareImagesWithOpenAI(
       referenceUrl,

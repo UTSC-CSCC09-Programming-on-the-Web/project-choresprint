@@ -20,8 +20,7 @@ const server = http.createServer(app);
 
 initSocket(server);
 
-// Start the AI verification worker AFTER socket is initialized
-import "./workers/aiVerificationWorker";
+// import "./workers/aiVerificationWorker";
 
 app.use(
   cors({

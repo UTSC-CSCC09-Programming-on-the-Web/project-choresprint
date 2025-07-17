@@ -54,6 +54,7 @@ export async function compareImagesWithOpenAI(
   });
 
   const parsed = response.choices[0].message.parsed;
+  console.log("AI Verification Response:", parsed);
   if (!parsed) {
     throw new Error("Failed to parse OpenAI response");
   }

@@ -39,24 +39,9 @@ const {
   formatDate,
 } = useDashboard();
 
-// Track processed verification events to prevent duplicates
-const processedVerifications = new Set();
 
 // Method to handle chore verification updates
 function handleVerificationUpdate(data) {
-  // Prevent duplicate processing
-  const verificationKey = `${data.choreId}-${Date.now()}`;
-  if (processedVerifications.has(data.choreId)) {
-    return;
-  }
-
-  processedVerifications.add(data.choreId);
-
-  // Clean up processed verification tracking after 30 seconds
-  // NOTE: This only cleans up duplicate prevention, not the explanations
-  setTimeout(() => {
-    processedVerifications.delete(data.choreId);
-  }, 30000);
 
   // Find the chore to get its points for optimistic update
   const chore =

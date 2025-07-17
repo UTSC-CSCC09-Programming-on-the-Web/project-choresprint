@@ -23,6 +23,7 @@
   },
   "scripts": {
     "dev": "prisma generate && npx prisma migrate dev --name init && nodemon --exec ts-node src/index.ts",
+    "worker": "nodemon --exec ts-node src/workers/aiVerificationWorker.ts",
     "build": "tsc",
     "start": "node dist/index.js"
   },
