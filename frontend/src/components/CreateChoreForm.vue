@@ -66,6 +66,7 @@
               type="date"
               class="form-input"
               :min="today"
+              :max="maxDate"
             />
           </div>
         </div>
@@ -176,6 +177,13 @@ const houseStore = useHouseStore();
 const today = computed(() => {
   const now = new Date();
   return now.toISOString().split("T")[0];
+});
+
+// Calculate max date as one year from today
+const maxDate = computed(() => {
+  const future = new Date();
+  future.setFullYear(future.getFullYear() + 1);
+  return future.toISOString().split("T")[0];
 });
 
 // Use chore form composable

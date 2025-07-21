@@ -71,6 +71,8 @@
                 v-model="form.dueDate"
                 type="date"
                 class="form-input"
+                :min="today"
+                :max="maxDate"
               />
             </div>
           </div>
@@ -137,7 +139,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, computed } from "vue";
 import { useChoreManagement } from "../composables/useChoreManagement";
 
 // Use the chore management composable
@@ -152,6 +154,19 @@ const {
   confirmDelete,
   goBack,
 } = useChoreManagement();
+
+// Get today's date in YYYY-MM-DD format
+const today = computed(() => {
+  const now = new Date();
+  return now.toISOString().split("T")[0];
+});
+
+// Calculate max date as one year from today
+const maxDate = computed(() => {
+  const future = new Date();
+  future.setFullYear(future.getFullYear() + 1);
+  return future.toISOString().split("T")[0];
+});
 
 // Load chore data when component mounts
 onMounted(() => {

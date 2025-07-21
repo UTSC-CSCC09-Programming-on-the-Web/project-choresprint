@@ -29,7 +29,17 @@ export const createChoreValidator = [
   body("dueDate")
     .optional({ nullable: true })
     .isISO8601()
-    .withMessage("Due date must be a valid date in ISO 8601 format"),
+    .withMessage("Due date must be a valid date in ISO 8601 format")
+    .bail()
+    .custom((value) => {
+      if (!value) return true;
+      const due = new Date(value);
+      const now = new Date();
+      const max = new Date();
+      max.setFullYear(max.getFullYear() + 1);
+      return due <= max && due >= now;
+    })
+    .withMessage("Due date must be within one year from today"),
   body("assignedToId")
     .optional({ nullable: true })
     .isInt()
@@ -52,7 +62,17 @@ export const updateChoreValidator = [
   body("dueDate")
     .optional({ nullable: true })
     .isISO8601()
-    .withMessage("Due date must be a valid date in ISO 8601 format"),
+    .withMessage("Due date must be a valid date in ISO 8601 format")
+    .bail()
+    .custom((value) => {
+      if (!value) return true;
+      const due = new Date(value);
+      const now = new Date();
+      const max = new Date();
+      max.setFullYear(max.getFullYear() + 1);
+      return due <= max && due >= now;
+    })
+    .withMessage("Due date must be within one year from today"),
   body("isCompleted")
     .optional()
     .isBoolean()
