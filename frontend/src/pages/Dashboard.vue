@@ -315,6 +315,10 @@ onUnmounted(() => {
                 :class="{
                   completed: chore.isCompleted,
                   failed: !chore.isCompleted && chore.attempted,
+                  overdue:
+                    !chore.isCompleted &&
+                    chore.dueDate &&
+                    new Date(chore.dueDate).getTime() < Date.now(),
                 }"
               >
                 <div
@@ -322,6 +326,10 @@ onUnmounted(() => {
                   :class="{
                     completed: chore.isCompleted,
                     failed: !chore.isCompleted && chore.attempted,
+                    overdue:
+                      !chore.isCompleted &&
+                      chore.dueDate &&
+                      new Date(chore.dueDate).getTime() < Date.now(),
                   }"
                 >
                   <span class="status-icon">✓</span>
@@ -433,6 +441,10 @@ onUnmounted(() => {
                 :class="{
                   completed: chore.isCompleted,
                   failed: !chore.isCompleted && chore.attempted,
+                  overdue:
+                    !chore.isCompleted &&
+                    chore.dueDate &&
+                    new Date(chore.dueDate).getTime() < Date.now(),
                 }"
               >
                 <div
@@ -440,6 +452,10 @@ onUnmounted(() => {
                   :class="{
                     completed: chore.isCompleted,
                     failed: !chore.isCompleted && chore.attempted,
+                    overdue:
+                      !chore.isCompleted &&
+                      chore.dueDate &&
+                      new Date(chore.dueDate).getTime() < Date.now(),
                   }"
                 >
                   <span class="status-icon">✓</span>
@@ -788,6 +804,11 @@ onUnmounted(() => {
   background-color: rgba(239, 68, 68, 0.05);
 }
 
+.chore-card.overdue {
+  border-left-color: var(--overdue);
+  background-color: rgba(248, 113, 113, 0.05);
+}
+
 .chore-status {
   width: 24px;
   height: 24px;
@@ -807,6 +828,11 @@ onUnmounted(() => {
 .chore-status.failed {
   background-color: var(--error);
   border-color: var(--error);
+}
+
+.chore-status.overdue {
+  background-color: var(--overdue);
+  border-color: var(--overdue);
 }
 
 .status-icon {

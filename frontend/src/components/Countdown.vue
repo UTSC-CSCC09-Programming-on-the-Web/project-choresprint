@@ -1,5 +1,5 @@
 <template>
-  <span class="countdown">{{ display }}</span>
+  <span class="countdown" :class="{ overdue }">{{ display }}</span>
 </template>
 
 <script setup lang="ts">
@@ -12,28 +12,33 @@ interface Props {
 
 const props = defineProps<Props>()
 const display = ref('')
+const overdue = ref(false)
 let timer: ReturnType<typeof setInterval> | null = null
 
 // update countdown display
 function update() {
   if (!props.targetDate) {
     display.value = ''
+    overdue.value = false
     timer && clearInterval(timer)
     return
   }
   const now = Date.now()
   const target = new Date(props.targetDate).getTime()
-  const diff = target - now
+  let diff = target - now
   if (diff <= 0) {
-    display.value = 'Past due'
-    timer && clearInterval(timer)
-    return
+    overdue.value = true
+    diff = Math.abs(diff)
+  } else {
+    overdue.value = false
   }
   const days = Math.floor(diff / 86400000)
   const hours = Math.floor((diff % 86400000) / 3600000)
   const minutes = Math.floor((diff % 3600000) / 60000)
   const seconds = Math.floor((diff % 60000) / 1000)
-  display.value = `${days}d ${hours}h ${minutes}m ${seconds}s`
+  display.value = overdue.value
+    ? `${days}d ${hours}h ${minutes}m ${seconds}s overdue`
+    : `${days}d ${hours}h ${minutes}m ${seconds}s`
 }
 
 // setup lifecycle hooks
@@ -61,5 +66,9 @@ watch(
 <style scoped>
 .countdown {
   color: var(--gray-dark);
+}
+
+.countdown.overdue {
+  color: var(--overdue);
 }
 </style>
