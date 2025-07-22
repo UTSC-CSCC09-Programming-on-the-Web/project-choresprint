@@ -336,7 +336,9 @@ onUnmounted(() => {
                   <div class="chore-meta">
                     <span v-if="chore.dueDate" class="chore-due">
                       Due: {{ formatDate(chore.dueDate) }}
-                      (<Countdown :target-date="chore.dueDate" />)
+                      <template v-if="!chore.isCompleted">
+                        (<Countdown :target-date="chore.dueDate" />)
+                      </template>
                     </span>
                     <span v-if="chore.points" class="chore-points">
                       {{ chore.points }} pts
@@ -452,7 +454,6 @@ onUnmounted(() => {
                   <div class="chore-meta">
                     <span v-if="chore.dueDate" class="chore-due">
                       Due: {{ formatDate(chore.dueDate) }}
-                      (<Countdown :target-date="chore.dueDate" />)
                     </span>
                     <span v-if="chore.points" class="chore-points">
                       {{ chore.points }} pts
