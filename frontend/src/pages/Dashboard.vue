@@ -10,6 +10,7 @@ import CreateHouseForm from "../components/CreateHouseForm.vue";
 import JoinHouseForm from "../components/JoinHouseForm.vue";
 import InviteCodeGenerator from "../components/InviteCodeGenerator.vue";
 import ChoreCompletionForm from "../components/ChoreCompletionForm.vue";
+import Countdown from "../components/Countdown.vue";
 import { RouterLink } from "vue-router";
 
 // Initialize stores
@@ -314,6 +315,10 @@ onUnmounted(() => {
                 :class="{
                   completed: chore.isCompleted,
                   failed: !chore.isCompleted && chore.attempted,
+                  overdue:
+                    !chore.isCompleted &&
+                    chore.dueDate &&
+                    new Date(chore.dueDate).getTime() < Date.now(),
                 }"
               >
                 <div
@@ -321,6 +326,10 @@ onUnmounted(() => {
                   :class="{
                     completed: chore.isCompleted,
                     failed: !chore.isCompleted && chore.attempted,
+                    overdue:
+                      !chore.isCompleted &&
+                      chore.dueDate &&
+                      new Date(chore.dueDate).getTime() < Date.now(),
                   }"
                 >
                   <span class="status-icon">✓</span>
@@ -335,6 +344,9 @@ onUnmounted(() => {
                   <div class="chore-meta">
                     <span v-if="chore.dueDate" class="chore-due">
                       Due: {{ formatDate(chore.dueDate) }}
+                      <template v-if="!chore.isCompleted">
+                        (<Countdown :target-date="chore.dueDate" />)
+                      </template>
                     </span>
                     <span v-if="chore.points" class="chore-points">
                       {{ chore.points }} pts
@@ -429,6 +441,10 @@ onUnmounted(() => {
                 :class="{
                   completed: chore.isCompleted,
                   failed: !chore.isCompleted && chore.attempted,
+                  overdue:
+                    !chore.isCompleted &&
+                    chore.dueDate &&
+                    new Date(chore.dueDate).getTime() < Date.now(),
                 }"
               >
                 <div
@@ -436,6 +452,10 @@ onUnmounted(() => {
                   :class="{
                     completed: chore.isCompleted,
                     failed: !chore.isCompleted && chore.attempted,
+                    overdue:
+                      !chore.isCompleted &&
+                      chore.dueDate &&
+                      new Date(chore.dueDate).getTime() < Date.now(),
                   }"
                 >
                   <span class="status-icon">✓</span>
@@ -784,6 +804,11 @@ onUnmounted(() => {
   background-color: rgba(239, 68, 68, 0.05);
 }
 
+.chore-card.overdue {
+  border-left-color: var(--overdue);
+  background-color: rgba(248, 113, 113, 0.05);
+}
+
 .chore-status {
   width: 24px;
   height: 24px;
@@ -803,6 +828,11 @@ onUnmounted(() => {
 .chore-status.failed {
   background-color: var(--error);
   border-color: var(--error);
+}
+
+.chore-status.overdue {
+  background-color: var(--overdue);
+  border-color: var(--overdue);
 }
 
 .status-icon {

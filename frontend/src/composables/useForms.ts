@@ -107,11 +107,18 @@ export function useJoinHouseForm() {
 }
 export function useChoreForm() {
   const houseStore = useHouseStore();
+
+  // get todays date in YYYY-MM-DD format
+  function getToday() {
+    const now = new Date();
+    return now.toISOString().split("T")[0];
+  }
+
   const form = ref({
     title: "",
     description: "",
     points: 10,
-    dueDate: "",
+    dueDate: getToday(), // Default to today
     assignedToId: null as number | null, // Explicitly allow null
     referencePhoto: null as File | null,
   });
@@ -249,7 +256,7 @@ export function useChoreForm() {
       title: "",
       description: "",
       points: 10,
-      dueDate: "",
+      dueDate: getToday(),
       assignedToId: null,
       referencePhoto: null,
     };
