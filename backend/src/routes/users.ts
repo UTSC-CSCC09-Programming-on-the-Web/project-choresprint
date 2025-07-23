@@ -7,6 +7,7 @@ import {
   deleteUserValidator,
   getUserValidator,
   getUsersValidator,
+  updateUserPreferencesValidator,
 } from "../validators/userValidators";
 
 export const router = Router();
@@ -105,6 +106,27 @@ router.delete(
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting user:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
+// Update authenticated user's preferences
+router.patch(
+  "/me/preferences",
+  updateUserPreferencesValidator,
+  async (req: Request, res: Response) => {
+    const userId = (req.user as any)?.id;
+    const { weeklyDigest } = req.body;
+    try {
+      const updated = await prisma.user.update({
+        where: { id: userId },
+        data: { weeklyDigest },
+        select: { weeklyDigest: true },
+      });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating preferences:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
