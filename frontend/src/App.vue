@@ -125,6 +125,13 @@ onMounted(() => {
               :class="{ 'dropdown-menu-active': dropdownOpen }"
             >
               <router-link
+                to="/manage-account"
+                class="dropdown-item"
+                @click="toggleDropdown"
+              >
+                Account Settings
+              </router-link>
+              <router-link
                 to="/manage-subscription"
                 class="dropdown-item dropdown-manage-sub"
                 @click="toggleDropdown"

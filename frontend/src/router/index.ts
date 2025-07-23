@@ -6,6 +6,7 @@ import Subscribe from "../pages/Subscribe.vue";
 import PaymentSuccess from "../pages/PaymentSuccess.vue";
 import PaymentCancel from "../pages/PaymentCancel.vue";
 import ManageSubscription from "../pages/ManageSubscription.vue";
+import ManageAccount from "../pages/ManageAccount.vue";
 import { getAuthStatus } from "../lib/auth";
 import { api } from "../api";
 
@@ -26,6 +27,12 @@ const routes = [
     path: "/manage-subscription",
     name: "ManageSubscription",
     component: ManageSubscription,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/manage-account",
+    name: "ManageAccount",
+    component: ManageAccount,
     meta: { requiresAuth: true },
   },
   {

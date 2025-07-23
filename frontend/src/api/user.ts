@@ -3,6 +3,9 @@ import { api } from ".";
 interface UserApiService {
   getUser: () => Promise<any>;
   logout: () => Promise<void>;
+  getById: (id: number) => Promise<any>;
+  updatePreferences: (prefs: { weeklyDigest: boolean }) => Promise<any>;
+  deleteAccount: (id: number) => Promise<void>;
 }
 
 let userApiService: UserApiService = {} as UserApiService;
