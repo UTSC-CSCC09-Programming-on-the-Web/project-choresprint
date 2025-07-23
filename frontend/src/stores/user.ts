@@ -94,6 +94,22 @@ export const useUserStore = defineStore("user", {
       }
     },
 
+    async deleteAccount() {
+      this.loading = true;
+      this.error = null;
+
+      try {
+        await userApiService.deleteAccount();
+        this.clearUser();
+        return true;
+      } catch (error) {
+        this.error = "Failed to delete account";
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
     clearUser() {
       this.user = null;
       this.isAuthenticated = false;

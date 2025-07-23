@@ -5,7 +5,7 @@ interface UserApiService {
   logout: () => Promise<void>;
   getById: (id: number) => Promise<any>;
   updatePreferences: (prefs: { weeklyDigest: boolean }) => Promise<any>;
-  deleteAccount: (id: number) => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 let userApiService: UserApiService = {} as UserApiService;
@@ -27,5 +27,40 @@ userApiService.logout = async function () {
     throw error;
   }
 };
+
+// Fetch user by ID
+userApiService.getById = async function (id: number) {
+  try {
+    const response = await api.get(`/users/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    throw error;
+  }
+};
+
+// Update user preferences
+userApiService.updatePreferences = async function (prefs: {
+  weeklyDigest: boolean;
+}) {
+  try {
+    const response = await api.patch("/users/me", prefs);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating preferences:", error);
+    throw error;
+  }
+};
+
+// Delete user account
+userApiService.deleteAccount = async function () {
+  try {
+    await api.delete("/users/me");
+  } catch (error) {
+    console.error("Error deleting account:", error);
+    throw error;
+  }
+};
+
 
 export default userApiService;

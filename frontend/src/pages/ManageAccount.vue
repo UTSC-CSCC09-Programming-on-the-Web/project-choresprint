@@ -83,8 +83,7 @@ async function deleteAccount() {
     return;
   }
   try {
-    await userApiService.deleteAccount(userStore.user.id);
-    await userStore.logout();
+    await userStore.deleteAccount();
     router.push('/');
   } catch (err) {
     console.error('Failed to delete account:', err);
