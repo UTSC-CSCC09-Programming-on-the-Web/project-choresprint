@@ -4,7 +4,7 @@ import { authMiddleware, subscriptionMiddleware } from "../middlewares/middlewar
 import {
   createUserValidator,
   updateUserValidator,
-  deleteUserValidator,
+  deleteMeValidator,
   getUserValidator,
   getUsersValidator,
   updateUserPreferencesValidator,
@@ -95,22 +95,6 @@ router.patch(
   }
 );
 
-// Delete a user
-router.delete(
-  "/:id",
-  deleteUserValidator, // Validate the ID before deletion
-  async (req: Request, res: Response) => {
-    const { id } = req.params;
-    try {
-      await prisma.user.delete({ where: { id: Number(id) } });
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      res.status(500).json({ error: "Internal Server Error" });
-    }
-  }
-);
-
 // Update authenticated user's preferences
 router.patch(
   "/me/preferences",
@@ -127,6 +111,22 @@ router.patch(
       res.json(updated);
     } catch (error) {
       console.error("Error updating preferences:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
+// Delete authenticated user's account
+router.delete(
+  "/me",
+  deleteMeValidator,
+  async (req: Request, res: Response) => {
+    try {
+      const id = (req.user as any).id;
+      await prisma.user.delete({ where: { id } });
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting user:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }

@@ -24,11 +24,7 @@ export const updateUserValidator = [
   body("avatarUrl").optional().isString(),
   validateRequest,
 ];
-
-export const deleteUserValidator = [
-  param("id").isInt().withMessage("User ID must be an integer"),
-  validateRequest,
-];
+export const deleteMeValidator = [validateRequest];
 
 export const getUserValidator = [
   param("id").isInt().withMessage("User ID must be an integer"),
