@@ -44,7 +44,7 @@ userApiService.updatePreferences = async function (prefs: {
   weeklyDigest: boolean;
 }) {
   try {
-    const response = await api.patch("/users/me", prefs);
+    const response = await api.patch("/users/me/preferences", prefs);
     return response.data;
   } catch (error) {
     console.error("Error updating preferences:", error);
