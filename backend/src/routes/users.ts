@@ -123,6 +123,35 @@ router.delete(
   async (req: Request, res: Response) => {
     try {
       const id = (req.user as any).id;
+
+      // Fetch the user with related house info
+      const user = await prisma.user.findUnique({
+        where: { id },
+        include: { createdHouse: true },
+      });
+
+      if (!user) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+
+      // If user created a house, remove it and reset all members
+      if (user.createdHouse) {
+        const houseId = user.createdHouse.id;
+        await prisma.invitation.deleteMany({ where: { houseId } });
+        await prisma.chore.deleteMany({ where: { houseId } });
+        await prisma.user.updateMany({
+          where: { houseId },
+          data: { houseId: null, points: 0 },
+        });
+        await prisma.house.delete({ where: { id: houseId } });
+      } else if (user.houseId) {
+        // If the user is a member of a house they didn't create, unassign chores
+        await prisma.chore.updateMany({
+          where: { houseId: user.houseId, assignedToId: id },
+          data: { assignedToId: null },
+        });
+      }
       await prisma.user.delete({ where: { id } });
       res.status(204).send();
     } catch (error) {
