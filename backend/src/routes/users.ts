@@ -153,6 +153,9 @@ router.delete(
         });
       }
       await prisma.user.delete({ where: { id } });
+      // Clear auth cookies so deleted users are also signed out
+      res.clearCookie("refreshToken", { path: "/api/auth/refresh" });
+      res.clearCookie("accessToken");
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting user:", error);
