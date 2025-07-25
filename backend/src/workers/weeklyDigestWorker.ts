@@ -1,9 +1,10 @@
 import "dotenv/config";
 import { prisma } from "../lib/prisma";
 import { sendMail } from "../lib/mailer";
+import cron from "node-cron";
 
 // worker sends weekly digest emails to house members
-async function sendWeeklyDigest() {
+export async function sendWeeklyDigest() {
   const houses = await prisma.house.findMany({
     include: {
       members: {
@@ -23,14 +24,14 @@ async function sendWeeklyDigest() {
     });
 
     const htmlList = leaderboard
-      .map((u: { name: string | null; points: number }, idx: number) =>
-        `<li>${idx + 1}. ${u.name ?? "User"} - ${u.points} pts</li>`
+      .map((u: { name: string | null; points: number | null }, idx: number) =>
+        `<li>${idx + 1}. ${u.name ?? "User"} - ${u.points ?? 0} pts</li>`
       )
       .join("");
 
     const textList = leaderboard
-      .map((u: { name: string | null; points: number }, idx: number) =>
-        `${idx + 1}. ${u.name ?? "User"} - ${u.points} pts`
+      .map((u: { name: string | null; points: number | null }, idx: number) =>
+        `${idx + 1}. ${u.name ?? "User"} - ${u.points ?? 0} pts`
       )
       .join("\n");
 
@@ -51,8 +52,22 @@ async function sendWeeklyDigest() {
   }
 }
 
-sendWeeklyDigest()
-  .catch((err) => console.error(err))
-  .finally(async () => {
-    await prisma.$disconnect();
+export function scheduleWeeklyDigest() {
+  // schedule for every sunday at 12:00 PM UTC
+  cron.schedule("0 12 * * 0", () => {
+    sendWeeklyDigest().catch((err: unknown) =>
+      console.error("Failed to send weekly digest:", err)
+    );
   });
+}
+
+// if ran directly, then send the digest
+if (require.main === module) {
+  prisma
+    .$connect()
+    .then(sendWeeklyDigest)
+    .catch((err: unknown) => console.error(err))
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}
