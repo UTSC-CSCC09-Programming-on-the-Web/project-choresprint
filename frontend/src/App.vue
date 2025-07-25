@@ -129,14 +129,7 @@ onMounted(() => {
                 class="dropdown-item"
                 @click="toggleDropdown"
               >
-                Account Settings
-              </router-link>
-              <router-link
-                to="/manage-subscription"
-                class="dropdown-item dropdown-manage-sub"
-                @click="toggleDropdown"
-              >
-                Manage Subscription
+                Manage Account
               </router-link>
               <button class="dropdown-item" @click="logout">Logout</button>
             </div>
@@ -285,10 +278,6 @@ onMounted(() => {
   transition: background-color var(--transition-fast);
   color: var(--gray-dark);
   text-decoration: none;
-}
-
-.dropdown-manage-sub {
-  font-size: var(--font-size-sm);
 }
 
 .dropdown-item:hover {

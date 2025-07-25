@@ -2,7 +2,7 @@
   <div class="manage-account container">
     <div class="account-card card">
       <div class="card-header">
-        <h2 class="card-title">Account Settings</h2>
+        <h2 class="card-title">Manage Account</h2>
       </div>
       <div class="card-body">
         <div v-if="loading" class="centered">
@@ -17,7 +17,7 @@
           </div>
 
           <div class="subscription-link">
-            <RouterLink to="/manage-subscription" class="btn btn-secondary">
+            <RouterLink to="/manage-subscription" class="btn btn-primary">
               Manage Subscription
             </RouterLink>
           </div>
