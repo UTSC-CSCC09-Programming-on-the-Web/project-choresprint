@@ -14,6 +14,8 @@ import { router as authRouter } from "./routes/auth";
 import { router as usersRouter } from "./routes/users";
 import { router as paymentsRouter } from "./routes/payments";
 
+import { scheduleWeeklyDigest } from "./workers/weeklyDigestWorker";
+
 dotenv.config();
 const app = express();
 const server = http.createServer(app);
@@ -51,6 +53,7 @@ prisma
     server.listen(PORT, () => {
       console.log(`Server running at http://localhost:${PORT}`);
     });
+    scheduleWeeklyDigest();
   })
   .catch((err: any) => {
     console.error("❌ Failed to connect to DB:", err);
