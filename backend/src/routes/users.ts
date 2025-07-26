@@ -12,9 +12,9 @@ import {
 
 export const router = Router();
 
-router.use(authMiddleware, subscriptionMiddleware); // require auth and active subscription
+router.use(authMiddleware); // require auth
 
-router.get("/", getUsersValidator, async (req: Request, res: Response) => {
+router.get("/", subscriptionMiddleware, getUsersValidator, async (req: Request, res: Response) => {
   // Pagination parameters
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
@@ -46,7 +46,7 @@ router.get("/", getUsersValidator, async (req: Request, res: Response) => {
 });
 
 // Get a single user by ID
-router.get("/:id", getUserValidator, async (req: Request, res: Response) => {
+router.get("/:id", subscriptionMiddleware, getUserValidator, async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     const user = await prisma.user.findUnique({ where: { id: Number(id) } });
@@ -62,7 +62,7 @@ router.get("/:id", getUserValidator, async (req: Request, res: Response) => {
 });
 
 // Create a new user
-router.post("/", createUserValidator, async (req: Request, res: Response) => {
+router.post("/", subscriptionMiddleware, createUserValidator, async (req: Request, res: Response) => {
   const { email, name, avatarUrl } = req.body;
   try {
     const newUser = await prisma.user.create({
@@ -78,6 +78,7 @@ router.post("/", createUserValidator, async (req: Request, res: Response) => {
 // Update an existing user
 router.patch(
   "/:id",
+  subscriptionMiddleware, // require subscription for updates
   updateUserValidator, // Validate the ID and body before updating
   async (req: Request, res: Response) => {
     const { id } = req.params;

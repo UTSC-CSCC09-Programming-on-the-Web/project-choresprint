@@ -55,8 +55,7 @@ onMounted(async () => {
     }
     // Fetch user preferences
     if (userStore.user) {
-      const data = await userApiService.getById(userStore.user.id);
-      weeklyDigest.value = data.weeklyDigest;
+      weeklyDigest.value = userStore.user.weeklyDigest ?? true;
     }
   } catch (err) {
     console.error('Failed to load account:', err);

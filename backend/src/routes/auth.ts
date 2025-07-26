@@ -82,6 +82,7 @@ router.get("/me", authMiddleware, async (req, res) => {
         houseId: true,
         avatarUrl: true,
         subscriptionStatus: true,
+        weeklyDigest: true,
         points: true,
         // Add other fields you want to return
       },
@@ -135,12 +136,17 @@ router.post(
 router.post("/logout", async (req: Request, res: Response) => {
   const token = req.cookies.refreshToken;
   if (token) {
-    // OPTIONAL: Invalidate in DB
-    const payload: any = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET!);
-    await prisma.user.update({
-      where: { id: payload.id },
-      data: { refreshToken: null },
-    });
+    try {
+      // OPTIONAL: Invalidate in DB 
+      const payload: any = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET!);
+      await prisma.user.update({
+        where: { id: payload.id },
+        data: { refreshToken: null },
+      });
+    } catch (err) {
+      // Swallow errors caused by missing user or invalid token
+      console.warn("Failed to invalidate refresh token during logout", err);
+    }
   }
 
   res.clearCookie("refreshToken", { path: "/api/auth/refresh" });

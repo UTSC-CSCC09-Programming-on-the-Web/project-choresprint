@@ -9,6 +9,7 @@ interface User {
   houseId?: number | null;
   points?: number;
   subscriptionRequired?: boolean;
+  weeklyDigest?: boolean;
 }
 
 export const useUserStore = defineStore("user", {

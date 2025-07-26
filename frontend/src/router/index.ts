@@ -62,7 +62,9 @@ router.beforeEach(async (to, _from, next) => {
   if (to.meta.requiresAuth) {
     const status = await getAuthStatus();
     if (!status.authed) return next("/");
-    if (status.subscriptionRequired) return next("/subscribe");
+    if (status.subscriptionRequired && to.name !== "ManageAccount") {
+      return next("/subscribe");
+    }
   }
   if (to.name === "EditChore") {
     const auth = await getAuthStatus();
