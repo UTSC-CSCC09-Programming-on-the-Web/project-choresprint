@@ -43,10 +43,28 @@ createdb choresprint_db
 
     # Frontend URL for redirects
     CLIENT_URL=http://localhost:5173
+
+    # SMTP server settings
+    SMTP_HOST=smtp.gmail.com
+    SMTP_PORT=465
+    SMTP_SECURE=true       # true when using port 465, false for 587 (STARTTLS)
+
+    # Login credentials
+    SMTP_USER=your_email@example.com
+    SMTP_PASS=your_smtp_password
+
+    # Optional "from" address
+    SMTP_FROM=ChoreSprint <your_email@example.com>
     ```
 
    The Stripe keys can be obtained from your Stripe dashboard. The webhook secret
    is displayed after you create a webhook endpoint.
+
+   If you use Gmail, create an **App Password** in your Google account and use it
+   for `SMTP_PASS`. Other providers (SendGrid, Mailgun, etc.) supply similar
+   credentials in their dashboards.
+   
+3. Make sure to replace the placeholder values with your actual configuration.
 
 ### Testing Stripe Webhooks Locally
 
@@ -59,8 +77,6 @@ stripe listen --forward-to localhost:4000/api/payments/webhook
 After running the command, copy the displayed `whsec_...` value into
 `STRIPE_WEBHOOK_SECRET` in your `.env` file. This allows Stripe to verify
 the incoming webhook requests while you develop locally.
-
-3. Make sure to replace the placeholder values with your actual configuration.
 
 ## Running the Backend
 
