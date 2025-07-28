@@ -38,16 +38,14 @@ export async function sendWeeklyDigest() {
     // create an HTML version of the top performers
     const htmlList = topPerformers
       .map((u, idx) => {
-        const chores = u.chores.map((c: { title: string }) => c.title).join(", ") || "None";
-        return `<li>${idx + 1}. ${u.name ?? "User"} - ${u.points ?? 0} pts <br/>Remaining chores: ${chores}</li>`;
+        return `<li>${idx + 1}. ${u.name ?? "User"} - ${u.points ?? 0} pts</li>`;
       })
       .join("");
 
     // create a text version of the top performers
     const textList = topPerformers
       .map((u, idx) => {
-        const chores = u.chores.map((c: { title: string }) => c.title).join(", ") || "None";
-        return `${idx + 1}. ${u.name ?? "User"} - ${u.points ?? 0} pts\nRemaining chores: ${chores}`;
+        return `${idx + 1}. ${u.name ?? "User"} - ${u.points ?? 0} pts`;
       })
       .join("\n\n");
 
