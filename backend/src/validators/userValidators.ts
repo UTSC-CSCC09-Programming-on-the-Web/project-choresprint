@@ -28,11 +28,7 @@ export const updateUserValidator = [
     .withMessage("isAdmin must be a boolean value"),
   validateRequest,
 ];
-
-export const deleteUserValidator = [
-  param("id").isInt().withMessage("User ID must be an integer"),
-  validateRequest,
-];
+export const deleteMeValidator = [validateRequest];
 
 export const getUserValidator = [
   param("id").isInt().withMessage("User ID must be an integer"),
@@ -42,5 +38,12 @@ export const getUserValidator = [
 export const getUsersValidator = [
   query("page").optional().isInt({ min: 1 }),
   query("limit").optional().isInt({ min: 1, max: 50 }),
+  validateRequest,
+];
+
+export const updateUserPreferencesValidator = [
+  body("weeklyDigest")
+    .isBoolean()
+    .withMessage("weeklyDigest must be a boolean"),
   validateRequest,
 ];

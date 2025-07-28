@@ -10,6 +10,7 @@ interface User {
   houseId?: number | null;
   points?: number;
   subscriptionRequired?: boolean;
+  weeklyDigest?: boolean;
   isAdmin?: boolean;
 }
 
@@ -107,6 +108,22 @@ export const useUserStore = defineStore("user", {
         return true;
       } catch (error) {
         this.error = "Failed to logout";
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async deleteAccount() {
+      this.loading = true;
+      this.error = null;
+
+      try {
+        await userApiService.deleteAccount();
+        this.clearUser();
+        return true;
+      } catch (error) {
+        this.error = "Failed to delete account";
         throw error;
       } finally {
         this.loading = false;

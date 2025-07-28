@@ -26,6 +26,7 @@ model User {
   house          House?       @relation("HouseMembers", fields: [houseId], references: [id])
   houseId        Int?
   points         Int?         @default(0)
+  weeklyDigest   Boolean      @default(true)
 
   // User can be a creator of a house
   createdHouse   House?       @relation("HouseCreator")
