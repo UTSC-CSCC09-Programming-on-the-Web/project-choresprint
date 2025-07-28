@@ -19,30 +19,53 @@ export async function sendWeeklyDigest() {
     const leaderboard = await prisma.user.findMany({
       where: { houseId: house.id },
       orderBy: { points: "desc" },
-      select: { name: true, points: true },
-      take: 5,
+      select: { id: true, name: true, points: true },
     });
 
-    const htmlList = leaderboard
-      .map((u: { name: string | null; points: number | null }, idx: number) =>
-        `<li>${idx + 1}. ${u.name ?? "User"} - ${u.points ?? 0} pts</li>`
-      )
+    // get top 5 performers
+    const topPerformers = await Promise.all(
+      leaderboard.slice(0, 5).map(async (u: { id: number; name: string | null; points: number | null }) => ({
+        id: u.id,
+        name: u.name,
+        points: u.points,
+        chores: await prisma.chore.findMany({
+          where: { assignedToId: u.id, isCompleted: false },
+          select: { title: true },
+        }),
+      }))
+    );
+
+    // create an HTML version of the top performers
+    const htmlList = topPerformers
+      .map((u, idx) => {
+        const chores = u.chores.map((c: { title: string }) => c.title).join(", ") || "None";
+        return `<li>${idx + 1}. ${u.name ?? "User"} - ${u.points ?? 0} pts <br/>Remaining chores: ${chores}</li>`;
+      })
       .join("");
 
-    const textList = leaderboard
-      .map((u: { name: string | null; points: number | null }, idx: number) =>
-        `${idx + 1}. ${u.name ?? "User"} - ${u.points ?? 0} pts`
-      )
-      .join("\n");
+    // create a text version of the top performers
+    const textList = topPerformers
+      .map((u, idx) => {
+        const chores = u.chores.map((c: { title: string }) => c.title).join(", ") || "None";
+        return `${idx + 1}. ${u.name ?? "User"} - ${u.points ?? 0} pts\nRemaining chores: ${chores}`;
+      })
+      .join("\n\n");
 
     // send digest to each member
     for (const member of house.members) {
+      const memberRank = leaderboard.findIndex((u: { id: number }) => u.id === member.id) + 1;
+      const memberPoints = leaderboard.find((u: { id: number; points: number | null }) => u.id === member.id)?.points ?? 0;
+      const pendingChores = await prisma.chore.findMany({
+        where: { assignedToId: member.id, isCompleted: false },
+        select: { title: true },
+      });
+      const choresList = pendingChores.map((c: { title: string }) => c.title).join(", ") || "None";
       try {
         await sendMail({
           to: member.email,
           subject: `Weekly Stats for ${house.name}`,
-          html: `<p>Hi ${member.name ?? "there"}, here are this week's top performers in ${house.name}:</p><ul>${htmlList}</ul>`,
-          text: `Hi ${member.name ?? "there"},\n\nHere are this week's top performers in ${house.name}:\n${textList}`,
+          html: `<p>Hi ${member.name ?? "there"}, here are this week's top performers in ${house.name}:</p><ul>${htmlList}</ul><p>Your position: ${memberRank}<br/>Your points: ${memberPoints}<br/>Chores left: ${choresList}</p>`,
+          text: `Hi ${member.name ?? "there"},\n\nHere are this week's top performers in ${house.name}:\n${textList}\n\nYour position: ${memberRank}\nYour points: ${memberPoints}\nChores left: ${choresList}`,
         });
         console.log(`Sent weekly digest to ${member.email}`);
       } catch (err) {
