@@ -44,25 +44,16 @@ createdb choresprint_db
     # Frontend URL for redirects
     CLIENT_URL=http://localhost:5173
 
-    # SMTP server settings
-    SMTP_HOST=smtp.gmail.com
-    SMTP_PORT=465
-    SMTP_SECURE=true       # true when using port 465, false for 587 (STARTTLS)
-
-    # Login credentials
-    SMTP_USER=your_email@example.com
-    SMTP_PASS=your_smtp_password
-
-    # Optional "from" address
-    SMTP_FROM=ChoreSprint <your_email@example.com>
+    # SendGrid Email settings
+    SENDGRID_API_KEY=SG.your_key
+    MAIL_FROM=ChoreSprint <your_email@example.com>
     ```
 
    The Stripe keys can be obtained from your Stripe dashboard. The webhook secret
    is displayed after you create a webhook endpoint.
 
-   If you use Gmail, create an **App Password** in your Google account and use it
-   for `SMTP_PASS`. Other providers (SendGrid, Mailgun, etc.) supply similar
-   credentials in their dashboards.
+   Create an API key in your SendGrid dashboard and place it in
+   `SENDGRID_API_KEY`. Use `MAIL_FROM` to set the default "from" address.
    
 3. Make sure to replace the placeholder values with your actual configuration.
 
