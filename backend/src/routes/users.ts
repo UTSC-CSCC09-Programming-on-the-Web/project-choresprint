@@ -4,16 +4,17 @@ import { authMiddleware, subscriptionMiddleware } from "../middlewares/middlewar
 import {
   createUserValidator,
   updateUserValidator,
-  deleteUserValidator,
+  deleteMeValidator,
   getUserValidator,
   getUsersValidator,
+  updateUserPreferencesValidator,
 } from "../validators/userValidators";
 
 export const router = Router();
 
-router.use(authMiddleware, subscriptionMiddleware); // require auth and active subscription
+router.use(authMiddleware); // require auth
 
-router.get("/", getUsersValidator, async (req: Request, res: Response) => {
+router.get("/", subscriptionMiddleware, getUsersValidator, async (req: Request, res: Response) => {
   // Pagination parameters
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
@@ -45,7 +46,7 @@ router.get("/", getUsersValidator, async (req: Request, res: Response) => {
 });
 
 // Get a single user by ID
-router.get("/:id", getUserValidator, async (req: Request, res: Response) => {
+router.get("/:id", subscriptionMiddleware, getUserValidator, async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     const user = await prisma.user.findUnique({ where: { id: Number(id) } });
@@ -61,7 +62,7 @@ router.get("/:id", getUserValidator, async (req: Request, res: Response) => {
 });
 
 // Create a new user
-router.post("/", createUserValidator, async (req: Request, res: Response) => {
+router.post("/", subscriptionMiddleware, createUserValidator, async (req: Request, res: Response) => {
   const { email, name, avatarUrl } = req.body;
   try {
     const newUser = await prisma.user.create({
@@ -77,6 +78,7 @@ router.post("/", createUserValidator, async (req: Request, res: Response) => {
 // Update an existing user
 router.patch(
   "/:id",
+  subscriptionMiddleware, // require subscription for updates
   updateUserValidator, // Validate the ID and body before updating
   async (req: Request, res: Response) => {
     const { id } = req.params;
@@ -94,14 +96,67 @@ router.patch(
   }
 );
 
-// Delete a user
-router.delete(
-  "/:id",
-  deleteUserValidator, // Validate the ID before deletion
+// Update authenticated user's preferences
+router.patch(
+  "/me/preferences",
+  updateUserPreferencesValidator,
   async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const userId = (req.user as any)?.id;
+    const { weeklyDigest } = req.body;
     try {
-      await prisma.user.delete({ where: { id: Number(id) } });
+      const updated = await prisma.user.update({
+        where: { id: userId },
+        data: { weeklyDigest },
+        select: { weeklyDigest: true },
+      });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating preferences:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
+// Delete authenticated user's account
+router.delete(
+  "/me",
+  deleteMeValidator,
+  async (req: Request, res: Response) => {
+    try {
+      const id = (req.user as any).id;
+
+      // Fetch the user with related house info
+      const user = await prisma.user.findUnique({
+        where: { id },
+        include: { createdHouse: true },
+      });
+
+      if (!user) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+
+      // If user created a house, remove it and reset all members
+      if (user.createdHouse) {
+        const houseId = user.createdHouse.id;
+        await prisma.invitation.deleteMany({ where: { houseId } });
+        await prisma.chore.deleteMany({ where: { houseId } });
+        await prisma.user.updateMany({
+          where: { houseId },
+          data: { houseId: null, points: 0 },
+        });
+        await prisma.house.delete({ where: { id: houseId } });
+      } else if (user.houseId) {
+        // If the user is a member of a house they didn't create, unassign chores
+        await prisma.chore.updateMany({
+          where: { houseId: user.houseId, assignedToId: id },
+          data: { assignedToId: null },
+        });
+      }
+      await prisma.user.delete({ where: { id } });
+      // Clear auth cookies so deleted users are also signed out
+      res.clearCookie("refreshToken", { path: "/api/auth/refresh" });
+      res.clearCookie("accessToken");
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting user:", error);

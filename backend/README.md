@@ -43,10 +43,19 @@ createdb choresprint_db
 
     # Frontend URL for redirects
     CLIENT_URL=http://localhost:5173
+
+    # SendGrid Email settings
+    SENDGRID_API_KEY=SG.your_key
+    MAIL_FROM=ChoreSprint <your_email@example.com>
     ```
 
    The Stripe keys can be obtained from your Stripe dashboard. The webhook secret
    is displayed after you create a webhook endpoint.
+
+   Create an API key in your SendGrid dashboard and place it in
+   `SENDGRID_API_KEY`. Use `MAIL_FROM` to set the default "from" address.
+   
+3. Make sure to replace the placeholder values with your actual configuration.
 
 ### Testing Stripe Webhooks Locally
 
@@ -59,8 +68,6 @@ stripe listen --forward-to localhost:4000/api/payments/webhook
 After running the command, copy the displayed `whsec_...` value into
 `STRIPE_WEBHOOK_SECRET` in your `.env` file. This allows Stripe to verify
 the incoming webhook requests while you develop locally.
-
-3. Make sure to replace the placeholder values with your actual configuration.
 
 ## Running the Backend
 
