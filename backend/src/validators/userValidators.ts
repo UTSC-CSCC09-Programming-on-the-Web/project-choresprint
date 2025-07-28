@@ -22,6 +22,10 @@ export const updateUserValidator = [
     .isLength({ min: 2, max: 100 })
     .withMessage("Name must be between 2 and 100 characters"),
   body("avatarUrl").optional().isString(),
+  body("isAdmin")
+    .optional()
+    .isBoolean()
+    .withMessage("isAdmin must be a boolean value"),
   validateRequest,
 ];
 

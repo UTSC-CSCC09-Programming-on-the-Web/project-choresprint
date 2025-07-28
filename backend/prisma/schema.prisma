@@ -20,6 +20,7 @@ model User {
   refreshToken String?
   stripeCustomerId String? // Stripe customer ID for billing
   subscriptionStatus String?
+  isAdmin      Boolean       @default(false)
 
   // User belongs to a house
   house          House?       @relation("HouseMembers", fields: [houseId], references: [id])

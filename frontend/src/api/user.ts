@@ -3,6 +3,7 @@ import { api } from ".";
 interface UserApiService {
   getUser: () => Promise<any>;
   logout: () => Promise<void>;
+  updateUser: (id: number, data: any) => Promise<any>;
 }
 
 let userApiService: UserApiService = {} as UserApiService;
@@ -21,6 +22,16 @@ userApiService.logout = async function () {
     await api.post("/auth/logout");
   } catch (error) {
     console.error("Error logging out:", error);
+    throw error;
+  }
+};
+
+userApiService.updateUser = async function (id: number, data: any) {
+  try {
+    const response = await api.patch(`/users/${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating user data:", error);
     throw error;
   }
 };

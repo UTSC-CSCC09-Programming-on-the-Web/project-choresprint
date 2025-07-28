@@ -83,6 +83,7 @@ router.get("/me", authMiddleware, async (req, res) => {
         avatarUrl: true,
         subscriptionStatus: true,
         points: true,
+        isAdmin: true,
         // Add other fields you want to return
       },
     });

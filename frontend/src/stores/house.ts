@@ -8,6 +8,7 @@ interface HouseUser {
   email: string;
   avatarUrl?: string;
   points?: number;
+  isAdmin?: boolean;
 }
 
 interface House {
@@ -272,6 +273,21 @@ export const useHouseStore = defineStore("house", {
         const userStore = useUserStore();
         if (userStore.userId === memberId) {
           userStore.setUserPoints(updatedPoints);
+        }
+      }
+    },
+
+    updateMemberAdminStatus(memberId: number, isAdmin: boolean) {
+      const index = this.houseMembers.findIndex(
+        (member) => member.id === memberId
+      );
+      if (index !== -1) {
+        this.houseMembers[index].isAdmin = isAdmin;
+
+        // If the current user is updated, reflect that in the user store
+        const userStore = useUserStore();
+        if (userStore.userId === memberId) {
+          userStore.setAdminStatus(isAdmin);
         }
       }
     },

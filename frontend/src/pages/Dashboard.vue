@@ -10,6 +10,7 @@ import CreateHouseForm from "../components/CreateHouseForm.vue";
 import JoinHouseForm from "../components/JoinHouseForm.vue";
 import InviteCodeGenerator from "../components/InviteCodeGenerator.vue";
 import ChoreCompletionForm from "../components/ChoreCompletionForm.vue";
+import ManageMembersModal from "../components/ManageMembersModal.vue";
 import Countdown from "../components/Countdown.vue";
 import { RouterLink } from "vue-router";
 
@@ -27,6 +28,7 @@ const {
   showJoinHouseForm,
   showCreateChoreModal,
   showInviteCodeModal,
+  showManageMembersModal,
   loadDashboard,
   openCreateHouse,
   openJoinHouse,
@@ -34,16 +36,16 @@ const {
   closeCreateChoreModal,
   openInviteCodeModal,
   closeInviteCodeModal,
+  openManageMembersModal,
+  closeManageMembersModal,
   deleteHouse,
   leaveHouse,
   markChoreComplete,
   formatDate,
 } = useDashboard();
 
-
 // Method to handle chore verification updates
 function handleVerificationUpdate(data) {
-
   // Find the chore to get its points for optimistic update
   const chore =
     choreStore.chores.find((c) => c.id === data.choreId) ||
@@ -208,6 +210,14 @@ onUnmounted(() => {
 
               <button
                 v-if="houseStore.isHouseOwner"
+                @click="openManageMembersModal"
+                class="btn btn-outline btn-sm"
+              >
+                <span class="btn-icon">👥</span> Manage Members
+              </button>
+
+              <button
+                v-if="houseStore.isHouseOwner"
                 @click="deleteHouse"
                 class="btn btn-error btn-sm"
               >
@@ -270,7 +280,7 @@ onUnmounted(() => {
           <div class="card-header">
             <h2 class="card-title">House Chores</h2>
             <button
-              v-if="houseStore.isHouseOwner"
+              v-if="houseStore.isHouseOwner || userStore.user.isAdmin"
               @click="openCreateChoreModal"
               class="btn btn-primary btn-sm"
             >
@@ -288,7 +298,7 @@ onUnmounted(() => {
             >
               <p>No chores have been created yet.</p>
               <button
-                v-if="houseStore.isHouseOwner"
+                v-if="houseStore.isHouseOwner || userStore.user.isAdmin"
                 @click="openCreateChoreModal"
                 class="btn btn-primary btn-sm"
               >
@@ -373,7 +383,7 @@ onUnmounted(() => {
                   >
 
                   <RouterLink
-                    v-if="houseStore.isHouseOwner"
+                    v-if="houseStore.isHouseOwner || userStore.user.isAdmin"
                     :to="`/chores/${chore.id}/edit`"
                     class="btn btn-sm btn-outline"
                   >
@@ -540,6 +550,21 @@ onUnmounted(() => {
               }
             "
           />
+        </div>
+      </div>
+    </div>
+
+    <!-- Manage Members Modal -->
+    <div v-if="showManageMembersModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">Manage Members</h2>
+          <button @click="closeManageMembersModal" class="close-button">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <ManageMembersModal />
         </div>
       </div>
     </div>
