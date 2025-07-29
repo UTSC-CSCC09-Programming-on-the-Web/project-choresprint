@@ -6,6 +6,7 @@ interface UserApiService {
   getById: (id: number) => Promise<any>;
   updatePreferences: (prefs: { weeklyDigest: boolean }) => Promise<any>;
   deleteAccount: () => Promise<void>;
+  updateUser: (id: number, data: any) => Promise<any>;
 }
 
 let userApiService: UserApiService = {} as UserApiService;
@@ -62,5 +63,15 @@ userApiService.deleteAccount = async function () {
   }
 };
 
+
+userApiService.updateUser = async function (id: number, data: any) {
+  try {
+    const response = await api.patch(`/users/${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating user data:", error);
+    throw error;
+  }
+};
 
 export default userApiService;

@@ -76,7 +76,7 @@ router.beforeEach(async (to, _from, next) => {
       return next({ name: "Dashboard" });
     }
     const houseRes = await api.get(`/houses/${choreRes.data.houseId}`);
-    if (auth.user.id !== houseRes.data.createdById) {
+    if (auth.user.id !== houseRes.data.createdById && !auth.user.isAdmin) {
       return next({ name: "Dashboard" });
     }
   }

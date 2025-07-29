@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from "express";
 
 // Import common validator middleware
 import { validateRequest } from "./houseValidators";
+import { getESTEndOfDayUTC } from "../utils/date";
 
 // Validators for chore endpoints
 export const createChoreValidator = [
@@ -33,10 +34,11 @@ export const createChoreValidator = [
     .bail()
     .custom((value) => {
       if (!value) return true;
-      const due = new Date(value);
+      const due = getESTEndOfDayUTC(value);
       const now = new Date();
       const max = new Date();
       max.setFullYear(max.getFullYear() + 1);
+      console.log("Due date validation:", due, now, max);
       return due <= max && due >= now;
     })
     .withMessage("Due date must be within one year from today"),
@@ -66,7 +68,7 @@ export const updateChoreValidator = [
     .bail()
     .custom((value) => {
       if (!value) return true;
-      const due = new Date(value);
+      const due = getESTEndOfDayUTC(value);
       const now = new Date();
       const max = new Date();
       max.setFullYear(max.getFullYear() + 1);

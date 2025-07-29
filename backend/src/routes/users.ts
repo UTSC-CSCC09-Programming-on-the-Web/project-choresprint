@@ -1,6 +1,9 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../lib/prisma";
-import { authMiddleware, subscriptionMiddleware } from "../middlewares/middleware";
+import {
+  authMiddleware,
+  subscriptionMiddleware,
+} from "../middlewares/middleware";
 import {
   createUserValidator,
   updateUserValidator,
@@ -82,11 +85,33 @@ router.patch(
   updateUserValidator, // Validate the ID and body before updating
   async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { email, name, avatarUrl } = req.body;
+    const { email, name, avatarUrl, isAdmin } = req.body;
     try {
+      if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const user = await prisma.user.findUnique({ where: { id: Number(id) } });
+      if (!user) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+
+      const house = await prisma.house.findUnique({
+        where: { id: user?.houseId || undefined },
+      });
+      if (!house) {
+        res.status(404).json({ error: "House not found" });
+        return;
+      }
+      if (house?.createdById !== (req.user as any).id) {
+        res.status(403).json({ error: "Forbidden" });
+        return;
+      }
       const updatedUser = await prisma.user.update({
         where: { id: Number(id) },
-        data: { email, name, avatarUrl },
+        data: { email, name, avatarUrl, isAdmin },
       });
       res.json(updatedUser);
     } catch (error) {

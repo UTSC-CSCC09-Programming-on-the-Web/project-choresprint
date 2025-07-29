@@ -17,6 +17,7 @@ import {
   uploadCompletionPhotoValidator,
 } from "../validators/choreValidators";
 import { choreVerificationQueue } from "../queues/choreVerificationQueue";
+import { getESTEndOfDayUTC } from "../utils/date";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -48,6 +49,45 @@ router.post(
     );
 
     try {
+      if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id: (req.user as any).id },
+      });
+
+      if (!user) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+
+      if (user.houseId !== Number(houseId)) {
+        res.status(403).json({
+          error: "You do not have access to this house.",
+        });
+        return;
+      }
+
+      const house = await prisma.house.findUnique({
+        where: { id: Number(houseId) },
+        include: {
+          members: true, // Include members to check if the user is a member
+        },
+      });
+      if (!house) {
+        res.status(404).json({ error: "House not found" });
+        return;
+      }
+
+      if (!user.isAdmin && user.id !== house.createdById) {
+        res.status(403).json({
+          error: "You do not have permission to create chores in this house.",
+        });
+        return;
+      }
+
       const newChore = await prisma.chore.create({
         data: {
           title,
@@ -55,7 +95,7 @@ router.post(
           houseId: Number(houseId),
           points: Number(points),
           referencePhotoUrl: (result as any).secure_url,
-          dueDate: dueDate ? new Date(dueDate) : undefined,
+          dueDate: dueDate ? getESTEndOfDayUTC(dueDate) : undefined,
           assignedToId: assignedToId ? Number(assignedToId) : undefined,
         },
       });
@@ -155,10 +195,7 @@ router.patch(
         return;
       }
 
-      if (
-        chore.house.createdById !== user.id &&
-        chore.assignedToId !== user.id
-      ) {
+      if (chore.house.createdById !== user.id && !user.isAdmin) {
         res
           .status(403)
           .json({ error: "You do not have access to this chore." });
@@ -169,7 +206,7 @@ router.patch(
         data: {
           title: title || chore.title,
           description: description || chore.description,
-          dueDate: dueDate ? new Date(dueDate) : chore.dueDate,
+          dueDate: dueDate ? getESTEndOfDayUTC(dueDate) : chore.dueDate,
           isCompleted: isCompleted,
           assignedToId: assignedToId
             ? Number(assignedToId)
@@ -241,7 +278,7 @@ router.delete(
         return;
       }
 
-      if (chore.house.createdById !== user.id) {
+      if (chore.house.createdById !== user.id && !user.isAdmin) {
         res.status(403).json({
           error: "You do not have permission to delete this chore.",
         });

@@ -84,6 +84,7 @@ router.get("/me", authMiddleware, async (req, res) => {
         subscriptionStatus: true,
         weeklyDigest: true,
         points: true,
+        isAdmin: true,
         // Add other fields you want to return
       },
     });

@@ -204,7 +204,7 @@ router.delete(
       await prisma.chore.deleteMany({ where: { houseId: house.id } });
       await prisma.user.updateMany({
         where: { houseId: house.id },
-        data: { houseId: null, points: 0 },
+        data: { houseId: null, points: 0, isAdmin: false }, // Reset points and chores for users in the house
       });
       await prisma.house.delete({ where: { id: house.id } });
       res.status(204).send();
@@ -488,6 +488,7 @@ router.get("/:id/users", async (req: Request, res: Response) => {
         email: true,
         avatarUrl: true,
         points: true,
+        isAdmin: true,
       },
       orderBy: {
         name: "asc",
@@ -529,7 +530,7 @@ router.delete("/:id/leave", async (req: Request, res: Response) => {
 
     await prisma.user.update({
       where: { id: user.id },
-      data: { houseId: null, points: 0 }, // Reset points when leaving the house
+      data: { houseId: null, points: 0, chores: { set: [] }, isAdmin: false }, // Reset points and chores when leaving the house
     });
 
     await prisma.chore.updateMany({

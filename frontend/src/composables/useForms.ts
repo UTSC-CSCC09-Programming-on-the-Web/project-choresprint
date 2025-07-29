@@ -223,6 +223,7 @@ export function useChoreForm() {
       formData.append("houseId", String(currentHouseId));
 
       if (form.value.dueDate) {
+        
         formData.append("dueDate", form.value.dueDate);
       }
 

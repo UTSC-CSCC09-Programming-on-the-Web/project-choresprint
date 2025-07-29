@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import userApiService from "../api/user";
+import { useHouseStore } from "./house";
 
 interface User {
   id: number;
@@ -10,6 +11,7 @@ interface User {
   points?: number;
   subscriptionRequired?: boolean;
   weeklyDigest?: boolean;
+  isAdmin?: boolean;
 }
 
 export const useUserStore = defineStore("user", {
@@ -78,6 +80,23 @@ export const useUserStore = defineStore("user", {
       }
     },
 
+    async updateUser(id: number, data: Partial<User>) {
+      this.loading = true;
+      this.error = null;
+      const houseStore = useHouseStore();
+      try {
+        // const { data: updatedUser } = await api.patch('/user', data);
+        const updatedUser = await userApiService.updateUser(id, data);
+        houseStore.updateMemberAdminStatus(id, data.isAdmin ?? false);
+        return updatedUser;
+      } catch (error) {
+        this.error = "Failed to update user profile";
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
     async logout() {
       this.loading = true;
       this.error = null;
@@ -129,5 +148,11 @@ export const useUserStore = defineStore("user", {
         this.user.points = points;
       }
     },
+
+    setAdminStatus(isAdmin: boolean) {
+      if (this.user) {
+        this.user.isAdmin = isAdmin;
+      }
+    }
   },
 });
