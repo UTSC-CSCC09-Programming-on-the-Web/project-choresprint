@@ -85,7 +85,7 @@
                 v-model="form.assignedToId"
                 class="form-select"
               >
-                <option :value="null">Unassigned</option>
+                <option :value="null">Unassigned (Anyone can claim it)</option>
                 <option
                   v-for="member in houseMembers"
                   :key="member.id"
