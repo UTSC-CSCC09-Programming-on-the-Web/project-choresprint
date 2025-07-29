@@ -14,6 +14,7 @@ interface ChoresApiService {
     params: { assignedTo: number; limit: number; cursor: number }
   ) => Promise<any>;
   uploadCompletionPhoto: (choreId: number, formData: FormData) => Promise<any>;
+  claimChore: (choreId: number) => Promise<any>;
 }
 
 let choresApiService: ChoresApiService = {} as ChoresApiService;
@@ -108,6 +109,16 @@ choresApiService.uploadCompletionPhoto = async function (
     return response.data;
   } catch (error) {
     console.error("Error uploading completion photo:", error);
+    throw error;
+  }
+};
+
+choresApiService.claimChore = async function (choreId: number) {
+  try {
+    const response = await api.post(`/chores/${choreId}/claim`);
+    return response.data;
+  } catch (error) {
+    console.error("Error claiming chore:", error);
     throw error;
   }
 };

@@ -80,6 +80,10 @@ export const useChoreStore = defineStore("chores", {
         state.userChores.find((c) => c.id === id)
       );
     },
+
+    unassignedAndPendingChores(state) {
+      return state.chores.filter((c) => !c.assignedToId && !c.isCompleted);
+    },
   },
 
   actions: {
@@ -280,10 +284,24 @@ export const useChoreStore = defineStore("chores", {
         if (existing) {
           const houseStore = useHouseStore();
 
-          if (!existing.isCompleted && updatedChore.isCompleted && updatedChore.assignedToId) {
-            houseStore.updateMemberPoints(updatedChore.assignedToId, updatedChore.points || 0);
-          } else if (existing.isCompleted && !updatedChore.isCompleted && existing.assignedToId) {
-            houseStore.updateMemberPoints(existing.assignedToId, -(existing.points || 0));
+          if (
+            !existing.isCompleted &&
+            updatedChore.isCompleted &&
+            updatedChore.assignedToId
+          ) {
+            houseStore.updateMemberPoints(
+              updatedChore.assignedToId,
+              updatedChore.points || 0
+            );
+          } else if (
+            existing.isCompleted &&
+            !updatedChore.isCompleted &&
+            existing.assignedToId
+          ) {
+            houseStore.updateMemberPoints(
+              existing.assignedToId,
+              -(existing.points || 0)
+            );
           }
         }
         return updatedChore;
@@ -392,6 +410,32 @@ export const useChoreStore = defineStore("chores", {
       } catch (error) {
         console.error("Error uploading completion photo:", error);
         this.error = "Failed to upload completion photo";
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async claimChore(choreId: number) {
+      this.loading = true;
+      this.error = null;
+
+      try {
+        const updatedChore = await choresApiService.claimChore(choreId);
+
+        // Update in chores array
+        const choreIndex = this.chores.findIndex((c) => c.id === choreId);
+        if (choreIndex !== -1) {
+          this.chores[choreIndex] = updatedChore;
+        }
+
+        // Update in userChores array if the user is the one who claimed it
+        this.userChores.push(updatedChore);
+
+        return updatedChore;
+      } catch (error) {
+        console.error("Error claiming chore:", error);
+        this.error = "Failed to claim chore";
         throw error;
       } finally {
         this.loading = false;

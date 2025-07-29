@@ -275,6 +275,52 @@ onUnmounted(() => {
           </div>
         </div>
 
+        <!-- Unassigned & Pending Chores Section (Independent) -->
+        <div
+          v-if="choreStore.unassignedAndPendingChores.length"
+          class="card unassigned-chores-card"
+        >
+          <div class="card-header">
+            <h2 class="card-title">Unassigned & Pending Chores</h2>
+          </div>
+          <div class="card-body">
+            <div class="chore-list">
+              <div
+                v-for="chore in choreStore.unassignedAndPendingChores"
+                :key="chore.id"
+                class="chore-card unassigned"
+              >
+                <div class="chore-content">
+                  <h4 class="chore-title">{{ chore.title }}</h4>
+                  <p v-if="chore.description" class="chore-description">
+                    {{ chore.description }}
+                  </p>
+                  <div class="chore-meta">
+                    <span v-if="chore.dueDate" class="chore-due">
+                      Due: {{ formatDate(chore.dueDate) }}
+                      <template v-if="!chore.isCompleted">
+                        (<Countdown :target-date="chore.dueDate" />)
+                      </template>
+                    </span>
+                    <span v-if="chore.points" class="chore-points"
+                      >{{ chore.points }} pts</span
+                    >
+                  </div>
+                </div>
+                <div class="chore-actions">
+                  <button
+                    class="btn btn-success btn-sm"
+                    @click="choreStore.claimChore(chore.id)"
+                    :disabled="choreStore.loading"
+                  >
+                    Claim
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- All house chores -->
         <div class="card chores-card">
           <div class="card-header">
@@ -1095,3 +1141,10 @@ onUnmounted(() => {
   }
 }
 </style>
+
+<style scoped></style>
+/* Unassigned chores section styles */ .unassigned-chores-card { margin-bottom:
+var(--spacing-lg); } .unassigned-chores-card .card-title { font-size:
+var(--font-size-lg); color: var(--primary); margin-bottom: var(--spacing-md); }
+.chore-card.unassigned { border-left: 4px solid var(--warning); background:
+#fffbe6; }
