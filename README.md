@@ -1,6 +1,6 @@
-# Project Name
+# ChoreSprint
 
-**ChoreSprint**
+https://www.choresprint.app
 
 ---
 
