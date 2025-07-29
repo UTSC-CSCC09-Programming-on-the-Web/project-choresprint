@@ -80,6 +80,7 @@ export function useChoreManagement() {
     error.value = "";
 
     try {
+      console.log("Assigned To ID");
       await choreStore.updateChore(choreId.value, {
         title: form.value.title,
         description: form.value.description,
@@ -87,7 +88,7 @@ export function useChoreManagement() {
         isCompleted: form.value.completed,
         assignedToId: form.value.assignedToId,
         dueDate: form.value.dueDate || undefined,
-        explanation: "", 
+        explanation: "",
       });
 
       // Redirect to dashboard after successful update

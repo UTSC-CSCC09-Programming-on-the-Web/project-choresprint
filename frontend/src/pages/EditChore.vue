@@ -85,7 +85,7 @@
                 v-model="form.assignedToId"
                 class="form-select"
               >
-                <option value="">Unassigned</option>
+                <option :value="null">Unassigned (Anyone can claim it)</option>
                 <option
                   v-for="member in houseMembers"
                   :key="member.id"
@@ -121,6 +121,7 @@
             <div class="form-actions">
               <button
                 @click="confirmDelete"
+                :disabled="loading || saving"
                 type="button"
                 class="btn btn-outline btn-danger"
               >

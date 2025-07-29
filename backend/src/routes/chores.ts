@@ -208,9 +208,7 @@ router.patch(
           description: description || chore.description,
           dueDate: dueDate ? getESTEndOfDayUTC(dueDate) : chore.dueDate,
           isCompleted: isCompleted,
-          assignedToId: assignedToId
-            ? Number(assignedToId)
-            : chore.assignedToId,
+          assignedToId: assignedToId ? Number(assignedToId) : null,
           points: points || chore.points,
           explanation: explanation,
         },
@@ -369,3 +367,56 @@ router.post(
     }
   }
 );
+
+router.post("/:id/claim", async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  if (!req.user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: (req.user as any).id },
+    });
+
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    const chore = await prisma.chore.findUnique({
+      where: { id: Number(id) },
+    });
+
+    if (!chore) {
+      res.status(404).json({ error: "Chore not found" });
+      return;
+    }
+
+    if (
+      chore.assignedToId !== null ||
+      chore.isCompleted ||
+      chore.houseId !== user.houseId
+    ) {
+      res.status(403).json({
+        error: "You are not allowed to claim this chore.",
+      });
+      return;
+    }
+
+    const updatedChore = await prisma.chore.update({
+      where: { id: Number(id) },
+      data: {
+        assignedToId: user.id,
+        attempted: false,
+      },
+    });
+
+    res.status(200).json(updatedChore);
+  } catch (error) {
+    console.error("Error claiming chore:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
