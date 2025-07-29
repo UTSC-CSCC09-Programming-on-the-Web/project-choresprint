@@ -121,6 +121,7 @@
             <div class="form-actions">
               <button
                 @click="confirmDelete"
+                :disabled="loading || saving"
                 type="button"
                 class="btn btn-outline btn-danger"
               >
