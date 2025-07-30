@@ -7,6 +7,7 @@ import PaymentSuccess from "../pages/PaymentSuccess.vue";
 import PaymentCancel from "../pages/PaymentCancel.vue";
 import ManageSubscription from "../pages/ManageSubscription.vue";
 import ManageAccount from "../pages/ManageAccount.vue";
+import Credits from "../pages/Credits.vue";
 import { getAuthStatus } from "../lib/auth";
 import { api } from "../api";
 
@@ -50,6 +51,11 @@ const routes = [
     name: "EditChore",
     component: EditChore,
     meta: { requiresAuth: true },
+  },
+  {
+    path: "/credits",
+    name: "Credits",
+    component: Credits,
   },
 ];
 

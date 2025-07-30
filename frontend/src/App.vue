@@ -215,7 +215,7 @@ onMounted(() => {
             reserved.
           </div>
           <div class="footer-links">
-            <a href="#" class="footer-link">Credits</a>
+            <router-link to="/credits" class="footer-link">Credits</router-link>
           </div>
         </div>
       </div>
