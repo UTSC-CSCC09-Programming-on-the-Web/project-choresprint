@@ -38,7 +38,6 @@ export const createChoreValidator = [
       const now = new Date();
       const max = new Date();
       max.setFullYear(max.getFullYear() + 1);
-      console.log("Due date validation:", due, now, max);
       return due <= max && due >= now;
     })
     .withMessage("Due date must be within one year from today"),

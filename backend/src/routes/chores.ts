@@ -43,11 +43,6 @@ router.post(
       return;
     }
 
-    const result = await uploadBufferToCloudinary(
-      req.file.buffer,
-      req.file.originalname
-    );
-
     try {
       if (!req.user) {
         res.status(401).json({ error: "Unauthorized" });
@@ -87,6 +82,11 @@ router.post(
         });
         return;
       }
+
+      const result = await uploadBufferToCloudinary(
+        req.file.buffer,
+        req.file.originalname
+      );
 
       const newChore = await prisma.chore.create({
         data: {
@@ -148,9 +148,10 @@ router.get("/:id", getChoreValidator, async (req: Request, res: Response) => {
 router.patch(
   "/:id",
   updateChoreValidator,
+  upload.single("file"),
   async (req: Request, res: Response) => {
     const { id } = req.params;
-    const {
+    let {
       title,
       description,
       dueDate,
@@ -159,6 +160,10 @@ router.patch(
       points,
       explanation,
     } = req.body;
+
+    if (typeof isCompleted !== "boolean") {
+      isCompleted = isCompleted === "true";
+    }
 
     try {
       const chore = await prisma.chore.findUnique({
@@ -201,6 +206,22 @@ router.patch(
           .json({ error: "You do not have access to this chore." });
         return;
       }
+
+      let referencePhotoUrl = chore.referencePhotoUrl;
+
+      if (req.file) {
+        const result = await uploadBufferToCloudinary(
+          req.file.buffer,
+          req.file.originalname
+        );
+
+        if (chore.referencePhotoUrl) {
+          await deletePhotoFromCloudinary(chore.referencePhotoUrl);
+        }
+
+        referencePhotoUrl = (result as any).secure_url;
+      }
+
       const updatedChore = await prisma.chore.update({
         where: { id: Number(id) },
         data: {
@@ -209,8 +230,10 @@ router.patch(
           dueDate: dueDate ? getESTEndOfDayUTC(dueDate) : chore.dueDate,
           isCompleted: isCompleted,
           assignedToId: assignedToId ? Number(assignedToId) : null,
-          points: points || chore.points,
-          explanation: explanation,
+          points: Number(points) || chore.points,
+          explanation:
+            chore.isCompleted ==isCompleted ? explanation : null,
+          referencePhotoUrl: referencePhotoUrl,
         },
       });
       if (isCompleted && updatedChore.assignedToId && !chore.isCompleted) {

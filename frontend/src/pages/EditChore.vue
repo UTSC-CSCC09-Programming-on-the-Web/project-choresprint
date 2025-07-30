@@ -112,6 +112,33 @@
             </div>
           </div>
 
+          <div class="form-group">
+            <label class="form-label">Reference Photo</label>
+            <div class="reference-photo-upload">
+              <input
+                type="file"
+                accept="image/*"
+                @change="onReferencePhotoChange"
+              />
+              <div
+                v-if="form.referencePhotoUrl"
+                class="reference-photo-preview"
+              >
+                <img
+                  :src="form.referencePhotoUrl"
+                  alt="Reference Preview"
+                  style="
+                    max-width: 180px;
+                    max-height: 120px;
+                    border-radius: 8px;
+                    border: 1px solid #eee;
+                    margin-top: 0.5em;
+                  "
+                />
+              </div>
+            </div>
+          </div>
+
           <div v-if="error" class="alert alert-error">
             <span class="alert-icon">⚠️</span>
             <span>{{ error }}</span>
@@ -156,6 +183,12 @@ const {
   goBack,
 } = useChoreManagement();
 
+// Helper to access referencePhoto and referencePhotoUrl reactively
+function setReferencePhoto(file: File) {
+  form.value.referencePhoto = file;
+  form.value.referencePhotoUrl = window.URL.createObjectURL(file);
+}
+
 // Get today's date in YYYY-MM-DD format
 const today = computed(() => {
   const now = new Date();
@@ -173,6 +206,13 @@ const maxDate = computed(() => {
 onMounted(() => {
   loadChoreData();
 });
+
+function onReferencePhotoChange(e: Event) {
+  const target = e.target as HTMLInputElement;
+  if (target && target.files && target.files[0]) {
+    setReferencePhoto(target.files[0]);
+  }
+}
 </script>
 
 <style scoped>
@@ -294,6 +334,16 @@ onMounted(() => {
 .btn-danger:hover {
   background-color: var(--error);
   color: var(--white);
+}
+
+.reference-photo-upload {
+  margin-top: var(--spacing-md);
+}
+
+.reference-photo-preview {
+  margin-top: var(--spacing-sm);
+  display: flex;
+  justify-content: center;
 }
 
 @media (max-width: 768px) {

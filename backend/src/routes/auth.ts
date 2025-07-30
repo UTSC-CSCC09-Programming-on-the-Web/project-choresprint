@@ -121,13 +121,22 @@ router.post(
         res.status(403).json({ error: "Invalid refresh token" });
         return;
       }
-      res.json({
-        accessToken: jwt.sign(
-          { id: user.id, email: user.email },
-          process.env.ACCESS_TOKEN_SECRET!,
-          { expiresIn: "1h" }
-        ),
-      });
+      res
+        .cookie(
+          "accessToken",
+          jwt.sign(
+            { id: user.id, email: user.email },
+            process.env.ACCESS_TOKEN_SECRET!,
+            { expiresIn: "1h" }
+          ),
+          {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production", // false in development
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // lax in development
+            maxAge: 60 * 60 * 1000, // 1 hour
+          }
+        )
+        .sendStatus(204); // or res.json({ success: true })
     } catch (err) {
       res.status(403).json({ error: "Invalid or expired refresh token" });
     }
@@ -138,7 +147,7 @@ router.post("/logout", async (req: Request, res: Response) => {
   const token = req.cookies.refreshToken;
   if (token) {
     try {
-      // OPTIONAL: Invalidate in DB 
+      // OPTIONAL: Invalidate in DB
       const payload: any = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET!);
       await prisma.user.update({
         where: { id: payload.id },

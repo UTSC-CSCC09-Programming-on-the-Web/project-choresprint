@@ -289,6 +289,8 @@ onUnmounted(() => {
                 v-for="chore in choreStore.unassignedAndPendingChores"
                 :key="chore.id"
                 class="chore-card unassigned"
+                @click="$router.push(`/chores/${chore.id}`)"
+                style="cursor: pointer"
               >
                 <div class="chore-content">
                   <h4 class="chore-title">{{ chore.title }}</h4>
@@ -310,7 +312,7 @@ onUnmounted(() => {
                 <div class="chore-actions">
                   <button
                     class="btn btn-success btn-sm"
-                    @click="choreStore.claimChore(chore.id)"
+                    @click.stop="choreStore.claimChore(chore.id)"
                     :disabled="choreStore.loading"
                   >
                     Claim
@@ -376,6 +378,8 @@ onUnmounted(() => {
                     chore.dueDate &&
                     new Date(chore.dueDate).getTime() < Date.now(),
                 }"
+                @click="$router.push(`/chores/${chore.id}`)"
+                style="cursor: pointer"
               >
                 <div
                   class="chore-status"
@@ -432,6 +436,7 @@ onUnmounted(() => {
                     v-if="houseStore.isHouseOwner || userStore.user.isAdmin"
                     :to="`/chores/${chore.id}/edit`"
                     class="btn btn-sm btn-outline"
+                    @click.stop
                   >
                     Edit
                   </RouterLink>
@@ -502,6 +507,8 @@ onUnmounted(() => {
                     chore.dueDate &&
                     new Date(chore.dueDate).getTime() < Date.now(),
                 }"
+                @click="$router.push(`/chores/${chore.id}`)"
+                style="cursor: pointer"
               >
                 <div
                   class="chore-status"
@@ -533,7 +540,7 @@ onUnmounted(() => {
                   </div>
                 </div>
 
-                <div class="chore-actions">
+                <div class="chore-actions" @click.stop>
                   <ChoreCompletionForm :chore-id="chore.id" :chore="chore" />
 
                   <span
@@ -847,6 +854,8 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .chore-card {
@@ -878,6 +887,14 @@ onUnmounted(() => {
 .chore-card.overdue {
   border-left-color: var(--overdue);
   background-color: rgba(248, 113, 113, 0.05);
+}
+
+.chore-card.unassigned {
+  border-left: 4px solid var(--warning);
+  background: #fffbe6;
+  /* Prevent content overflow */
+  word-break: break-word;
+  overflow: hidden;
 }
 
 .chore-status {
@@ -1067,7 +1084,9 @@ onUnmounted(() => {
   width: 90%;
   max-width: 500px;
   max-height: 90vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .modal-header {
@@ -1076,25 +1095,16 @@ onUnmounted(() => {
   align-items: center;
   padding: var(--spacing-lg);
   border-bottom: 1px solid var(--light);
-}
-
-.modal-title {
-  font-size: var(--font-size-xl);
-  color: var(--dark);
-  margin: 0;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  line-height: 1;
-  cursor: pointer;
-  color: var(--gray);
+  flex-shrink: 0;
+  overflow-x: hidden;
 }
 
 .modal-body {
   padding: var(--spacing-lg);
+  overflow-y: auto;
+  overflow-x: auto;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 /* Button specific styles */
@@ -1120,6 +1130,7 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
+    gap: var(--spacing-md);
   }
 
   .house-info-card,
@@ -1138,6 +1149,43 @@ onUnmounted(() => {
 
   .action-buttons {
     flex-direction: column;
+  }
+
+  /* --- Chore card mobile improvements --- */
+  .chore-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--spacing-md) var(--spacing-sm);
+    min-width: 0;
+    word-break: break-word;
+    gap: var(--spacing-sm);
+  }
+  .chore-status {
+    margin-right: 0;
+    margin-bottom: var(--spacing-xs);
+    align-self: flex-start;
+  }
+  .chore-content {
+    width: 100%;
+    min-width: 0;
+  }
+  .chore-actions {
+    margin-left: 0;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+  .completed-badge,
+  .failed-badge {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: var(--spacing-xs);
+  }
+  .unassigned-chores-card .chore-list {
+    max-height: 300px;
+    overflow-y: auto;
   }
 }
 </style>

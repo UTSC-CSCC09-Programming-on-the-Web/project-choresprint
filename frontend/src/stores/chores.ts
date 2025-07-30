@@ -248,7 +248,7 @@ export const useChoreStore = defineStore("chores", {
     },
 
     // Update an existing chore
-    async updateChore(choreId: number, choreData: Partial<Chore>) {
+    async updateChore(choreId: number, choreData: FormData) {
       this.loading = true;
       this.error = null;
 

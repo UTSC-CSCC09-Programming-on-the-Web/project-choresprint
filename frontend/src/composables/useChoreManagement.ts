@@ -19,6 +19,8 @@ export function useChoreManagement() {
     completed: false,
     assignedToId: null as number | null,
     dueDate: "",
+    referencePhoto: null as File | null,
+    referencePhotoUrl: "",
   });
 
   // UI state
@@ -55,6 +57,8 @@ export function useChoreManagement() {
         dueDate: chore.dueDate
           ? new Date(chore.dueDate).toISOString().split("T")[0]
           : "",
+        referencePhoto: null,
+        referencePhotoUrl: chore.referencePhotoUrl || "",
       };
     } catch (err: any) {
       error.value = err.message || "Failed to load chore details";
@@ -80,16 +84,24 @@ export function useChoreManagement() {
     error.value = "";
 
     try {
-      console.log("Assigned To ID");
-      await choreStore.updateChore(choreId.value, {
-        title: form.value.title,
-        description: form.value.description,
-        points: form.value.points,
-        isCompleted: form.value.completed,
-        assignedToId: form.value.assignedToId,
-        dueDate: form.value.dueDate || undefined,
-        explanation: "",
-      });
+      const formData = new FormData();
+      formData.append("title", form.value.title);
+      formData.append("description", form.value.description);
+      formData.append("points", String(form.value.points));
+      formData.append("isCompleted", String(form.value.completed));
+      if (
+        form.value.assignedToId !== null &&
+        form.value.assignedToId !== undefined
+      ) {
+        formData.append("assignedToId", String(form.value.assignedToId));
+      }
+      if (form.value.dueDate) {
+        formData.append("dueDate", form.value.dueDate);
+      }
+      if (form.value.referencePhoto instanceof File) {
+        formData.append("file", form.value.referencePhoto);
+      }
+      await choreStore.updateChore(choreId.value, formData);
 
       // Redirect to dashboard after successful update
       router.push("/dashboard");
