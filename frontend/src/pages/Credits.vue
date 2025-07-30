@@ -45,6 +45,18 @@
           screens. can you polish the ui to make the mobile experience better?"
         </li>
         <li>"add a page to view chore details for each chore"</li>
+        <li>"Please maintain the frontend styling for all stripe features"</li>
+        <li>"Refactor my countdown implementation so that it's real-time"</li>
+        <li>
+          "Im adding weekly digests and I want to have an email to use very
+          temporarily to send these weekly digests to users, what can I use
+          that's the most cost/time efficient and what can I use to automate
+          this?
+        </li>
+        <li>
+          "Make it so that when the user's account is deleted, it automatically
+          signs the user out"
+        </li>
       </ul>
     </div>
   </div>
