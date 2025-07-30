@@ -4,6 +4,12 @@ https://www.choresprint.app
 
 ---
 
+## Demo Video
+
+https://www.youtube.com/watch?v=-ntOpsMDR1I
+
+---
+
 ## Team Members
 
 - Orhan Cangurel — `orhan.cangurel@mail.utoronto.ca`, utorid: _cangurel_
