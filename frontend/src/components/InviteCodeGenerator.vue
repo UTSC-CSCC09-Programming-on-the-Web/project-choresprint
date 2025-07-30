@@ -35,21 +35,6 @@
             <span v-else>Copy Code</span>
           </button>
         </div>
-
-        <div class="invite-link">
-          <p class="invite-link-label">Or share this link:</p>
-          <div class="code-display">
-            <code class="invite-url truncate">{{ inviteUrl }}</code>
-            <button
-              @click="copyInviteUrl"
-              class="btn btn-sm btn-outline copy-btn"
-              :class="{ 'btn-success': copiedUrl }"
-            >
-              <span v-if="copiedUrl">Copied! ✓</span>
-              <span v-else>Copy URL</span>
-            </button>
-          </div>
-        </div>
       </div>
 
       <div v-if="error" class="alert alert-error mt-md">
@@ -81,28 +66,6 @@ const {
   generateInviteCode,
   copyToClipboard,
 } = useInviteCodeGenerator();
-
-// Computed properties
-const inviteUrl = computed(() => {
-  if (!inviteCode.value) return "";
-  const baseUrl = window.location.origin;
-  return `${baseUrl}/join/${inviteCode.value}`;
-});
-
-const copiedUrl = computed(() => false); // You can add this to the composable if needed
-
-// Copy URL to clipboard
-function copyInviteUrl() {
-  navigator.clipboard
-    .writeText(inviteUrl.value)
-    .then(() => {
-      // Handle success - you might want to add this to the composable
-      console.log("URL copied to clipboard");
-    })
-    .catch((err) => {
-      console.error("Failed to copy URL: ", err);
-    });
-}
 
 // Reset to generate new code
 function resetInvite() {
@@ -170,8 +133,7 @@ function resetInvite() {
   width: 100%;
 }
 
-.invite-code,
-.invite-url {
+.invite-code {
   flex: 1;
   padding: var(--spacing-sm) var(--spacing-md);
   font-family: monospace;
@@ -195,17 +157,6 @@ function resetInvite() {
   border-color: var(--success);
 }
 
-.invite-link {
-  margin-top: var(--spacing-md);
-  width: 100%;
-}
-
-.invite-link-label {
-  font-size: var(--font-size-sm);
-  color: var(--gray);
-  margin-bottom: var(--spacing-xs);
-}
-
 .reset-btn {
   margin-top: var(--spacing-md);
 }
@@ -227,8 +178,7 @@ function resetInvite() {
     gap: var(--spacing-sm);
   }
 
-  .invite-code,
-  .invite-url {
+  .invite-code {
     width: 100%;
     overflow: auto;
     white-space: normal;

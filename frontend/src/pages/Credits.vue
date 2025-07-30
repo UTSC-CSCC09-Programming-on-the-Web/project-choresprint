@@ -44,6 +44,7 @@
           "overall, the ui looks good. however, it doesn't look good on mobile
           screens. can you polish the ui to make the mobile experience better?"
         </li>
+        <li>"add a page to view chore details for each chore"</li>
       </ul>
     </div>
   </div>
