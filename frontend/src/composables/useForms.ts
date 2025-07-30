@@ -160,7 +160,7 @@ export function useChoreForm() {
 
     // Reset file input
     const fileInput = document.getElementById(
-      "file-upload"
+      "file-upload",
     ) as HTMLInputElement;
     if (fileInput) {
       fileInput.value = "";
@@ -223,7 +223,6 @@ export function useChoreForm() {
       formData.append("houseId", String(currentHouseId));
 
       if (form.value.dueDate) {
-        
         formData.append("dueDate", form.value.dueDate);
       }
 

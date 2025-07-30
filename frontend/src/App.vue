@@ -30,7 +30,7 @@ watch(
   (val) => {
     user.value = val as any;
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Toggle dropdown menu
@@ -68,7 +68,7 @@ watch(
   () => {
     mobileNavOpen.value = false;
     dropdownOpen.value = false;
-  }
+  },
 );
 
 // Check if user is logged in

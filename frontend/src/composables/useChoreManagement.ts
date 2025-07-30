@@ -134,7 +134,7 @@ export function useChoreManagement() {
   function confirmDelete() {
     if (
       confirm(
-        "Are you sure you want to delete this chore? This action cannot be undone."
+        "Are you sure you want to delete this chore? This action cannot be undone.",
       )
     ) {
       deleteChore();

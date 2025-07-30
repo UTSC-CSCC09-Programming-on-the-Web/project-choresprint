@@ -153,6 +153,6 @@ export const useUserStore = defineStore("user", {
       if (this.user) {
         this.user.isAdmin = isAdmin;
       }
-    }
+    },
   },
 });

@@ -5,7 +5,7 @@ import { prisma } from "../lib/prisma";
 export const authMiddleware: RequestHandler = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   const token =
     req.cookies.accessToken || req.headers.authorization?.split(" ")[1];
@@ -28,7 +28,7 @@ export const authMiddleware: RequestHandler = (
 export const subscriptionMiddleware: RequestHandler = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const userId = (req as any).user?.id;

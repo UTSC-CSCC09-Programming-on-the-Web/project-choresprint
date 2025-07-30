@@ -256,7 +256,7 @@ export const useChoreStore = defineStore("chores", {
         const existing = this.getChoreById(choreId);
         const updatedChore = await choresApiService.updateChore(
           choreId,
-          choreData
+          choreData,
         );
 
         // Update in chores array
@@ -271,7 +271,7 @@ export const useChoreStore = defineStore("chores", {
 
         // Update in userChores array
         const userChoreIndex = this.userChores.findIndex(
-          (c) => c.id === choreId
+          (c) => c.id === choreId,
         );
         if (userChoreIndex !== -1) {
           const updatedUserChoreInArray = {
@@ -291,7 +291,7 @@ export const useChoreStore = defineStore("chores", {
           ) {
             houseStore.updateMemberPoints(
               updatedChore.assignedToId,
-              updatedChore.points || 0
+              updatedChore.points || 0,
             );
           } else if (
             existing.isCompleted &&
@@ -300,7 +300,7 @@ export const useChoreStore = defineStore("chores", {
           ) {
             houseStore.updateMemberPoints(
               existing.assignedToId,
-              -(existing.points || 0)
+              -(existing.points || 0),
             );
           }
         }
@@ -375,7 +375,7 @@ export const useChoreStore = defineStore("chores", {
 
         // Update in userChores array
         const userChoreIndex = this.userChores.findIndex(
-          (c) => c.id === choreId
+          (c) => c.id === choreId,
         );
         if (userChoreIndex !== -1) {
           const updatedUserChoreInArray = {
@@ -504,7 +504,7 @@ export const useChoreStore = defineStore("chores", {
 
         // Update in userChores array
         const userChoreIndex = this.userChores.findIndex(
-          (c) => c.id === choreId
+          (c) => c.id === choreId,
         );
         if (userChoreIndex !== -1) {
           this.userChores.splice(userChoreIndex, 1, updatedChore);
@@ -521,7 +521,7 @@ export const useChoreStore = defineStore("chores", {
     updateChoreVerificationStatus(
       choreId: number,
       verified: boolean,
-      explanation?: string
+      explanation?: string,
     ) {
       // Update in chores array
       const choreIndex = this.chores.findIndex((c) => c.id === choreId);

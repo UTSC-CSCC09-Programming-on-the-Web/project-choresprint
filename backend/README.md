@@ -27,34 +27,35 @@ createdb choresprint_db
    ```
 
 2. Add the following environment variables to the `.env` file:
-    ```
-    # Database Configuration
-    DB_URL=postgres://postgres:your_password@localhost:5432/choresprint_db
 
-    # JWT Secrets
-    ACCESS_TOKEN_SECRET=replace_me
-    REFRESH_TOKEN_SECRET=replace_me_too
+   ```
+   # Database Configuration
+   DB_URL=postgres://postgres:your_password@localhost:5432/choresprint_db
 
-    # Stripe Configuration
-    STRIPE_SECRET_KEY=sk_test_...
-    STRIPE_PRICE_ID=price_...
-    # Filled in after creating a webhook endpoint
-    STRIPE_WEBHOOK_SECRET=whsec_...
+   # JWT Secrets
+   ACCESS_TOKEN_SECRET=replace_me
+   REFRESH_TOKEN_SECRET=replace_me_too
 
-    # Frontend URL for redirects
-    CLIENT_URL=http://localhost:5173
+   # Stripe Configuration
+   STRIPE_SECRET_KEY=sk_test_...
+   STRIPE_PRICE_ID=price_...
+   # Filled in after creating a webhook endpoint
+   STRIPE_WEBHOOK_SECRET=whsec_...
 
-    # SendGrid Email settings
-    SENDGRID_API_KEY=SG.your_key
-    MAIL_FROM=ChoreSprint <your_email@example.com>
-    ```
+   # Frontend URL for redirects
+   CLIENT_URL=http://localhost:5173
+
+   # SendGrid Email settings
+   SENDGRID_API_KEY=SG.your_key
+   MAIL_FROM=ChoreSprint <your_email@example.com>
+   ```
 
    The Stripe keys can be obtained from your Stripe dashboard. The webhook secret
    is displayed after you create a webhook endpoint.
 
    Create an API key in your SendGrid dashboard and place it in
    `SENDGRID_API_KEY`. Use `MAIL_FROM` to set the default "from" address.
-   
+
 3. Make sure to replace the placeholder values with your actual configuration.
 
 ### Testing Stripe Webhooks Locally

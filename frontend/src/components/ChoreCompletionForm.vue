@@ -168,7 +168,7 @@ watch(
       loading.value = false;
       error.value = null;
     }
-  }
+  },
 );
 
 // Computed

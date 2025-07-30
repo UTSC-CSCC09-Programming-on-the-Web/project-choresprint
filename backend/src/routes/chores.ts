@@ -85,7 +85,7 @@ router.post(
 
       const result = await uploadBufferToCloudinary(
         req.file.buffer,
-        req.file.originalname
+        req.file.originalname,
       );
 
       const newChore = await prisma.chore.create({
@@ -104,7 +104,7 @@ router.post(
       console.error("Error creating chore:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  },
 );
 
 router.get("/:id", getChoreValidator, async (req: Request, res: Response) => {
@@ -212,7 +212,7 @@ router.patch(
       if (req.file) {
         const result = await uploadBufferToCloudinary(
           req.file.buffer,
-          req.file.originalname
+          req.file.originalname,
         );
 
         if (chore.referencePhotoUrl) {
@@ -231,8 +231,7 @@ router.patch(
           isCompleted: isCompleted,
           assignedToId: assignedToId ? Number(assignedToId) : null,
           points: Number(points) || chore.points,
-          explanation:
-            chore.isCompleted ==isCompleted ? explanation : null,
+          explanation: chore.isCompleted == isCompleted ? explanation : null,
           referencePhotoUrl: referencePhotoUrl,
         },
       });
@@ -263,7 +262,7 @@ router.patch(
       console.error("Error updating chore:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  },
 );
 
 router.delete(
@@ -318,7 +317,7 @@ router.delete(
       console.error("Error deleting chore:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  },
 );
 
 router.post(
@@ -362,7 +361,7 @@ router.post(
 
       const result = await uploadBufferToCloudinary(
         req.file.buffer,
-        req.file.originalname
+        req.file.originalname,
       );
 
       // Reset the attempted flag when a new proof is uploaded
@@ -388,7 +387,7 @@ router.post(
       console.error("Error uploading completion photo:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  },
 );
 
 router.post("/:id/claim", async (req: Request, res: Response) => {

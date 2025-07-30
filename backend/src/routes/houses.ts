@@ -168,7 +168,7 @@ router.patch(
       console.error("Error updating house:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  },
 );
 
 router.delete(
@@ -212,7 +212,7 @@ router.delete(
       console.error("Error deleting house:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  },
 );
 
 router.get(
@@ -337,7 +337,7 @@ router.get(
       console.error("Error fetching chores for house:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  },
 );
 
 router.post("/:id/invitations", async (req: Request, res: Response) => {

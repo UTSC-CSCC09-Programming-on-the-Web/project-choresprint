@@ -5,7 +5,7 @@ import { Request, Response, NextFunction } from "express";
 export const validateRequest = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -76,6 +76,9 @@ export const getHouseChoresValidator = [
     .optional()
     .isIn(["asc", "desc"])
     .withMessage("Sort direction must be either asc or desc"),
-    query("assignedTo").optional().isInt().withMessage("AssignedTo must be an integer"),
+  query("assignedTo")
+    .optional()
+    .isInt()
+    .withMessage("AssignedTo must be an integer"),
   validateRequest,
 ];

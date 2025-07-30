@@ -55,7 +55,7 @@ function handleVerificationUpdate(data) {
   choreStore.updateChoreVerificationStatus(
     data.choreId,
     data.verified,
-    data.explanation
+    data.explanation,
   );
 
   if (chore && data.verified && chore.points) {
@@ -565,7 +565,7 @@ onUnmounted(() => {
                   @click="
                     choreStore.loadMoreUserChores(
                       houseStore.currentHouse?.id,
-                      userStore.userId
+                      userStore.userId,
                     )
                   "
                   class="btn btn-primary btn-sm load-more-btn"

@@ -40,7 +40,7 @@ const worker = new Worker(
       referenceUrl,
       proofUrl,
       title,
-      description
+      description,
     );
 
     await prisma.chore.update({
@@ -77,7 +77,7 @@ const worker = new Worker(
 
     return returnValue;
   },
-  { connection: redis }
+  { connection: redis },
 );
 
 worker.on("completed", (job) => {

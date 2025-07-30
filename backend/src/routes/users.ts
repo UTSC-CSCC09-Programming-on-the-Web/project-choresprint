@@ -52,7 +52,7 @@ router.get(
       console.error("Error fetching user:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  },
 );
 
 // Update an existing user
@@ -95,7 +95,7 @@ router.patch(
       console.error("Error updating user:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  },
 );
 
 // Update authenticated user's preferences
@@ -120,7 +120,7 @@ router.patch(
       console.error("Error updating preferences:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  },
 );
 
 // Delete authenticated user's account

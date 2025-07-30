@@ -42,7 +42,7 @@ export const useHouseStore = defineStore("house", {
 
     sortedMembers: (state) => {
       return [...state.houseMembers].sort(
-        (a, b) => (b.points || 0) - (a.points || 0)
+        (a, b) => (b.points || 0) - (a.points || 0),
       );
     },
 
@@ -251,7 +251,7 @@ export const useHouseStore = defineStore("house", {
         // `/houses/${this.currentHouse.id}/invitations`
         // );
         const code = await houseApiService.generateInvitationCode(
-          this.currentHouse.id
+          this.currentHouse.id,
         );
         return code;
       } catch (error) {
@@ -264,7 +264,7 @@ export const useHouseStore = defineStore("house", {
 
     updateMemberPoints(memberId: number, points: number) {
       const index = this.houseMembers.findIndex(
-        (member) => member.id === memberId
+        (member) => member.id === memberId,
       );
       if (index !== -1) {
         const updatedPoints = (this.houseMembers[index].points || 0) + points;
@@ -279,7 +279,7 @@ export const useHouseStore = defineStore("house", {
 
     updateMemberAdminStatus(memberId: number, isAdmin: boolean) {
       const index = this.houseMembers.findIndex(
-        (member) => member.id === memberId
+        (member) => member.id === memberId,
       );
       if (index !== -1) {
         this.houseMembers[index].isAdmin = isAdmin;

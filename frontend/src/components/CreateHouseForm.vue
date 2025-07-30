@@ -59,13 +59,7 @@ import { useHouseForm } from "../composables/useForms";
 const emit = defineEmits(["created"]);
 
 // Use house form composable
-const {
-  houseName,
-  loading,
-  error,
-  success,
-  createHouse
-} = useHouseForm();
+const { houseName, loading, error, success, createHouse } = useHouseForm();
 
 // Handle form submission
 const handleSubmit = async () => {

@@ -11,7 +11,11 @@
         <div v-else>
           <div class="form-group">
             <label class="form-label">
-              <input type="checkbox" v-model="weeklyDigest" @change="saveDigest" />
+              <input
+                type="checkbox"
+                v-model="weeklyDigest"
+                @change="saveDigest"
+              />
               Receive weekly digest emails
             </label>
           </div>
@@ -34,17 +38,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { RouterLink, useRouter } from 'vue-router';
-import { useUserStore } from '../stores/user';
-import userApiService from '../api/user';
+import { ref, onMounted } from "vue";
+import { RouterLink, useRouter } from "vue-router";
+import { useUserStore } from "../stores/user";
+import userApiService from "../api/user";
 
 const userStore = useUserStore();
 const router = useRouter();
 
 const weeklyDigest = ref(true);
 const loading = ref(false);
-const error = ref('');
+const error = ref("");
 
 // Load user preferences on mount
 onMounted(async () => {
@@ -58,8 +62,8 @@ onMounted(async () => {
       weeklyDigest.value = userStore.user.weeklyDigest ?? true;
     }
   } catch (err) {
-    console.error('Failed to load account:', err);
-    error.value = 'Failed to load account details.';
+    console.error("Failed to load account:", err);
+    error.value = "Failed to load account details.";
   } finally {
     loading.value = false; // Reset loading state
   }
@@ -68,25 +72,31 @@ onMounted(async () => {
 // Save weekly digest preference
 async function saveDigest() {
   try {
-    await userApiService.updatePreferences({ weeklyDigest: weeklyDigest.value });
+    await userApiService.updatePreferences({
+      weeklyDigest: weeklyDigest.value,
+    });
   } catch (err) {
-    console.error('Failed to update preferences:', err);
-    error.value = 'Failed to update preferences.';
+    console.error("Failed to update preferences:", err);
+    error.value = "Failed to update preferences.";
   }
 }
 
 // Delete user account
 async function deleteAccount() {
   if (!userStore.user) return;
-  if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+  if (
+    !confirm(
+      "Are you sure you want to delete your account? This action cannot be undone.",
+    )
+  ) {
     return;
   }
   try {
     await userStore.deleteAccount();
-    router.push('/');
+    router.push("/");
   } catch (err) {
-    console.error('Failed to delete account:', err);
-    error.value = 'Failed to delete account.';
+    console.error("Failed to delete account:", err);
+    error.value = "Failed to delete account.";
   }
 }
 </script>

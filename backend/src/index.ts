@@ -35,7 +35,7 @@ app.use(
       "http://www.choresprint.app",
     ],
     credentials: true, // Important for cookies to work cross-domain
-  })
+  }),
 );
 app.use("/api/payments/webhook", bodyParser.raw({ type: "application/json" }));
 app.use(express.json());

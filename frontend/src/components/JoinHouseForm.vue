@@ -33,7 +33,9 @@
         <!-- Success message display -->
         <div v-if="success" class="alert alert-success">
           <span class="alert-icon">✅</span>
-          <span>Successfully joined the house! Redirecting to dashboard...</span>
+          <span
+            >Successfully joined the house! Redirecting to dashboard...</span
+          >
         </div>
       </div>
 
@@ -64,13 +66,7 @@ const emit = defineEmits(["joined"]);
 const route = useRoute();
 
 // Use join house form composable
-const {
-  inviteCode,
-  loading,
-  error,
-  success,
-  joinHouse
-} = useJoinHouseForm();
+const { inviteCode, loading, error, success, joinHouse } = useJoinHouseForm();
 
 // Check for invitation code in route params
 onMounted(() => {

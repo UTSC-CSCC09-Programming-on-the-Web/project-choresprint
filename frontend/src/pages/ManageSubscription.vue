@@ -23,19 +23,22 @@
               <span class="status-icon">✓</span>
               <span>Active Subscription</span>
             </div>
-            
+
             <div class="subscription-details">
               <p><strong>Status:</strong> {{ subscriptionStatus }}</p>
-              <p v-if="subscription?.id"><strong>ID:</strong> {{ subscription.id }}</p>
+              <p v-if="subscription?.id">
+                <strong>ID:</strong> {{ subscription.id }}
+              </p>
               <p v-if="subscription?.currentPeriodEnd">
-                <strong>Next billing:</strong> {{ formatDate(subscription.currentPeriodEnd) }}
+                <strong>Next billing:</strong>
+                {{ formatDate(subscription.currentPeriodEnd) }}
               </p>
             </div>
 
             <div class="subscription-actions">
-              <button 
-                class="btn btn-danger" 
-                @click="handleCancelSubscription" 
+              <button
+                class="btn btn-danger"
+                @click="handleCancelSubscription"
                 :disabled="cancelLoading"
               >
                 <span v-if="cancelLoading" class="loader-inline"></span>
@@ -49,9 +52,10 @@
               <span class="status-icon">⏸</span>
               <span>No Active Subscription</span>
             </div>
-            
+
             <p class="inactive-message">
-              You do not have an active subscription. Subscribe now to access all ChoreSprint features.
+              You do not have an active subscription. Subscribe now to access
+              all ChoreSprint features.
             </p>
 
             <div class="subscription-actions">
@@ -67,11 +71,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { RouterLink } from 'vue-router';
-import { usePayment } from '../composables/usePayment';
+import { onMounted } from "vue";
+import { RouterLink } from "vue-router";
+import { usePayment } from "../composables/usePayment";
 
-const { 
+const {
   subscription,
   hasActiveSubscription,
   subscriptionStatus,
@@ -80,7 +84,7 @@ const {
   error,
   fetchSubscriptionStatus,
   cancelSubscription,
-  clearError
+  clearError,
 } = usePayment();
 
 onMounted(async () => {
@@ -88,7 +92,7 @@ onMounted(async () => {
     await fetchSubscriptionStatus();
   } catch (error) {
     // Error handled by store
-    console.error('Failed to load subscription:', error);
+    console.error("Failed to load subscription:", error);
   }
 });
 
@@ -103,10 +107,10 @@ async function handleCancelSubscription() {
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
 }
 </script>

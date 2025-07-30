@@ -33,7 +33,8 @@ router.post("/checkout", authMiddleware, async (req, res) => {
 
     // Copilot: Finish this checkout session creation using stripe
     const priceId = process.env.STRIPE_PRICE_ID;
-    if (!priceId) { // check if the price ID is set in the environment variables
+    if (!priceId) {
+      // check if the price ID is set in the environment variables
       console.error("STRIPE_PRICE_ID environment variable is missing");
       res.status(500).json({ error: "Stripe price configuration missing" });
       return;
@@ -66,7 +67,11 @@ router.post("/webhook", async (req: Request, res: Response) => {
   const sig = req.headers["stripe-signature"] as string | undefined; // get the signature from the headers
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig || "", process.env.STRIPE_WEBHOOK_SECRET!); // construct the event using the body and signature
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig || "",
+      process.env.STRIPE_WEBHOOK_SECRET!,
+    ); // construct the event using the body and signature
   } catch (err: any) {
     console.error("Webhook signature verification failed:", err.message);
     res.status(400).send(`Webhook Error: ${err.message}`);
@@ -74,46 +79,47 @@ router.post("/webhook", async (req: Request, res: Response) => {
   }
 
   try {
-      switch (event.type) {
-        case "checkout.session.completed": { // checkout session is completed
-          const session = event.data.object as Stripe.Checkout.Session;
-          const customerId = session.customer as string;
-          const user = await prisma.user.findFirst({
-            where: { stripeCustomerId: customerId },
+    switch (event.type) {
+      case "checkout.session.completed": {
+        // checkout session is completed
+        const session = event.data.object as Stripe.Checkout.Session;
+        const customerId = session.customer as string;
+        const user = await prisma.user.findFirst({
+          where: { stripeCustomerId: customerId },
+        });
+        if (user) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { subscriptionStatus: "active" },
           });
-          if (user) {
-            await prisma.user.update({
-              where: { id: user.id },
-              data: { subscriptionStatus: "active" },
-            });
-          }
-          break;
         }
-        case "customer.subscription.deleted": { // subscription is canceled
-          const subscription = event.data.object as Stripe.Subscription;
-          const customerId = subscription.customer as string;
-          const user = await prisma.user.findFirst({
-            where: { stripeCustomerId: customerId },
-          });
-          if (user) {
-            await prisma.user.update({
-              where: { id: user.id },
-              data: { subscriptionStatus: "canceled" },
-            });
-          }
-          break;
-        }
-        default:
-          break;
+        break;
       }
-    } catch (err) {
-      console.error("Error handling webhook event:", err);
-      res.status(500).send();
-      return;
+      case "customer.subscription.deleted": {
+        // subscription is canceled
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId = subscription.customer as string;
+        const user = await prisma.user.findFirst({
+          where: { stripeCustomerId: customerId },
+        });
+        if (user) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { subscriptionStatus: "canceled" },
+          });
+        }
+        break;
+      }
+      default:
+        break;
     }
-    res.json({ received: true });
+  } catch (err) {
+    console.error("Error handling webhook event:", err);
+    res.status(500).send();
+    return;
   }
-);
+  res.json({ received: true });
+});
 
 // return the current subscription status for the logged in user
 router.get("/subscription", authMiddleware, async (req, res) => {

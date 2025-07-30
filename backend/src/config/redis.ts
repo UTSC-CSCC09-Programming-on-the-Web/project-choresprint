@@ -6,5 +6,5 @@ export const redis = new Redis(
     maxRetriesPerRequest: null, // Disable automatic retries
     enableReadyCheck: true, // Enable ready check to ensure connection is established
     // connectTimeout: 10000, // 10 seconds timeout for connection
-  }
+  },
 );

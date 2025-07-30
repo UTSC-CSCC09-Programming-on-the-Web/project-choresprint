@@ -35,8 +35,8 @@ passport.use(
       } catch (err) {
         done(err, undefined);
       }
-    }
-  )
+    },
+  ),
 );
 
 export default passport;

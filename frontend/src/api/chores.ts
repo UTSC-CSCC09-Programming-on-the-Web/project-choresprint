@@ -3,7 +3,7 @@ import { api } from ".";
 interface ChoresApiService {
   getChores: (
     houseId: number,
-    params: { limit: number; cursor: number }
+    params: { limit: number; cursor: number },
   ) => Promise<any>;
   createChore: (choreData: any) => Promise<any>;
   updateChore: (choreId: number, choreData: any) => Promise<any>;
@@ -11,7 +11,7 @@ interface ChoresApiService {
   getChore: (choreId: number) => Promise<any>;
   getUserChores: (
     userId: number,
-    params: { assignedTo: number; limit: number; cursor: number }
+    params: { assignedTo: number; limit: number; cursor: number },
   ) => Promise<any>;
   uploadCompletionPhoto: (choreId: number, formData: FormData) => Promise<any>;
   claimChore: (choreId: number) => Promise<any>;
@@ -21,7 +21,7 @@ let choresApiService: ChoresApiService = {} as ChoresApiService;
 
 choresApiService.getChores = async function (
   houseId: number,
-  params: { limit: number; cursor: number }
+  params: { limit: number; cursor: number },
 ) {
   try {
     const response = await api.get(`/houses/${houseId}/chores`, { params });
@@ -48,7 +48,7 @@ choresApiService.createChore = async function (choreData: any) {
 
 choresApiService.updateChore = async function (
   choreId: number,
-  choreData: any
+  choreData: any,
 ) {
   try {
     const response = await api.patch(`/chores/${choreId}`, choreData);
@@ -81,7 +81,7 @@ choresApiService.getChore = async function (choreId: number) {
 
 choresApiService.getUserChores = async function (
   houseId: number,
-  params: { assignedTo: number; limit: number; cursor: number }
+  params: { assignedTo: number; limit: number; cursor: number },
 ) {
   try {
     const response = await api.get(`/houses/${houseId}/chores`, { params });
@@ -94,7 +94,7 @@ choresApiService.getUserChores = async function (
 
 choresApiService.uploadCompletionPhoto = async function (
   choreId: number,
-  formData: FormData
+  formData: FormData,
 ) {
   try {
     const response = await api.post(
@@ -104,7 +104,7 @@ choresApiService.uploadCompletionPhoto = async function (
         headers: {
           "Content-Type": "multipart/form-data",
         },
-      }
+      },
     );
     return response.data;
   } catch (error) {

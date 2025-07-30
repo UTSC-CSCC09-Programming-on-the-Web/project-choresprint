@@ -13,7 +13,7 @@ router.get(
   passport.authenticate("google", {
     scope: ["profile", "email"],
     prompt: "select_account",
-  })
+  }),
 );
 
 // Step 2: Handle Google's callback after login
@@ -26,13 +26,13 @@ router.get(
     const accessToken = jwt.sign(
       { id: user.id, email: user.email },
       process.env.ACCESS_TOKEN_SECRET!,
-      { expiresIn: "1h" }
+      { expiresIn: "1h" },
     );
 
     const refreshToken = jwt.sign(
       { id: user.id, email: user.email },
       process.env.REFRESH_TOKEN_SECRET!,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     await prisma.user.update({
@@ -64,7 +64,7 @@ router.get(
       })
       //   .json({ accessToken, safeUser })
       .redirect(process.env.CLIENT_URL! || "http://localhost:5173"); // Redirect to frontend URL
-  }
+  },
 );
 
 // (Optional) Get current user session
@@ -127,20 +127,20 @@ router.post(
           jwt.sign(
             { id: user.id, email: user.email },
             process.env.ACCESS_TOKEN_SECRET!,
-            { expiresIn: "1h" }
+            { expiresIn: "1h" },
           ),
           {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production", // false in development
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // lax in development
             maxAge: 60 * 60 * 1000, // 1 hour
-          }
+          },
         )
         .sendStatus(204); // or res.json({ success: true })
     } catch (err) {
       res.status(403).json({ error: "Invalid or expired refresh token" });
     }
-  }
+  },
 );
 
 router.post("/logout", async (req: Request, res: Response) => {

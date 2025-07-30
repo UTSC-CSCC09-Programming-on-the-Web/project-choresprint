@@ -15,7 +15,7 @@ export async function compareImagesWithOpenAI(
   referenceUrl: string,
   proofUrl: string,
   title: string,
-  description: string
+  description: string,
 ): Promise<typeof ChoreCompletion._type> {
   const response = await openai.chat.completions.parse({
     model: "gpt-4.1-mini",

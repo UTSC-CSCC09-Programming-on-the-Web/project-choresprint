@@ -63,7 +63,6 @@ userApiService.deleteAccount = async function () {
   }
 };
 
-
 userApiService.updateUser = async function (id: number, data: any) {
   try {
     const response = await api.patch(`/users/${id}`, data);

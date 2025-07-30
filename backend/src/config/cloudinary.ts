@@ -9,14 +9,14 @@ cloudinary.config({
 
 function getPublicIdFromUrl(url: string): string | null {
   const match = decodeURIComponent(url).match(
-    /\/upload\/(?:v\d+\/)?(.+?)(?:\.\w+)?$/
+    /\/upload\/(?:v\d+\/)?(.+?)(?:\.\w+)?$/,
   );
   return match ? match[1] : null;
 }
 
 export async function uploadBufferToCloudinary(
   buffer: Buffer,
-  filename = "image"
+  filename = "image",
 ) {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
@@ -29,7 +29,7 @@ export async function uploadBufferToCloudinary(
       (error: any, result: any) => {
         if (error) return reject(error);
         resolve(result);
-      }
+      },
     );
 
     streamifier.createReadStream(buffer).pipe(uploadStream);

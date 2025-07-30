@@ -33,7 +33,7 @@ export function useDashboard() {
             userStore.userId &&
               choreStore.fetchUserChores(
                 houseStore.currentHouse.id,
-                userStore.userId
+                userStore.userId,
               ),
           ]);
         }
@@ -83,7 +83,7 @@ export function useDashboard() {
   async function deleteHouse() {
     if (
       confirm(
-        "Are you sure you want to delete this house? This action cannot be undone."
+        "Are you sure you want to delete this house? This action cannot be undone.",
       )
     ) {
       try {
@@ -98,7 +98,7 @@ export function useDashboard() {
   async function leaveHouse() {
     if (
       confirm(
-        "Are you sure you want to leave this house? You'll need a new invitation to rejoin."
+        "Are you sure you want to leave this house? You'll need a new invitation to rejoin.",
       )
     ) {
       try {

@@ -24,15 +24,23 @@ export async function sendWeeklyDigest() {
 
     // get top 5 performers
     const topPerformers = await Promise.all(
-      leaderboard.slice(0, 5).map(async (u: { id: number; name: string | null; points: number | null }) => ({
-        id: u.id,
-        name: u.name,
-        points: u.points,
-        chores: await prisma.chore.findMany({
-          where: { assignedToId: u.id, isCompleted: false },
-          select: { title: true },
-        }),
-      }))
+      leaderboard
+        .slice(0, 5)
+        .map(
+          async (u: {
+            id: number;
+            name: string | null;
+            points: number | null;
+          }) => ({
+            id: u.id,
+            name: u.name,
+            points: u.points,
+            chores: await prisma.chore.findMany({
+              where: { assignedToId: u.id, isCompleted: false },
+              select: { title: true },
+            }),
+          }),
+        ),
     );
 
     // create an HTML version of the top performers
@@ -51,13 +59,19 @@ export async function sendWeeklyDigest() {
 
     // send digest to each member
     for (const member of house.members) {
-      const memberRank = leaderboard.findIndex((u: { id: number }) => u.id === member.id) + 1;
-      const memberPoints = leaderboard.find((u: { id: number; points: number | null }) => u.id === member.id)?.points ?? 0;
+      const memberRank =
+        leaderboard.findIndex((u: { id: number }) => u.id === member.id) + 1;
+      const memberPoints =
+        leaderboard.find(
+          (u: { id: number; points: number | null }) => u.id === member.id,
+        )?.points ?? 0;
       const pendingChores = await prisma.chore.findMany({
         where: { assignedToId: member.id, isCompleted: false },
         select: { title: true },
       });
-      const choresList = pendingChores.map((c: { title: string }) => c.title).join(", ") || "None";
+      const choresList =
+        pendingChores.map((c: { title: string }) => c.title).join(", ") ||
+        "None";
       try {
         await sendMail({
           to: member.email,
@@ -77,7 +91,7 @@ export function scheduleWeeklyDigest() {
   // schedule for every sunday at 12:00 PM UTC
   cron.schedule("0 12 * * 0", () => {
     sendWeeklyDigest().catch((err: unknown) =>
-      console.error("Failed to send weekly digest:", err)
+      console.error("Failed to send weekly digest:", err),
     );
   });
 }
