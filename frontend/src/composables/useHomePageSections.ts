@@ -14,16 +14,28 @@ export function useHomePageSections() {
         "Create and assign chores with descriptions, due dates, and points values.",
     },
     {
-      icon: "🤖",
-      title: "AI Chore Completion Verification",
+      icon: "🏆",
+      title: "Track Completion",
       description:
-        "Upload photos of completed chores to be automatically verified by our AI system and track everyone's contributions to household maintenance.",
+        "Mark chores as completed and track everyone's contributions to household maintenance.",
+    },
+    {
+      icon: "🤖",
+      title: "AI Photo Verification",
+      description:
+        "Upload photos of completed chores to be automatically verified by our AI system.",
     },
     {
       icon: "📊",
       title: "Earn Points",
       description:
         "Earn points for completing chores and see who contributes the most in your household.",
+    },
+    {
+      icon: "🔔",
+      title: "Weekly Digest",
+      description:
+        "Receive weekly summaries and statistics about your household's chore completion.",
     },
   ];
 
@@ -49,31 +61,8 @@ export function useHomePageSections() {
     },
   ];
 
-  // Coming soon features
-  const comingSoonFeatures = [
-    {
-      icon: "🎮",
-      title: "Chore Draft Lobby",
-      description:
-        "Join real-time chore draft sessions to fairly distribute tasks among household members.",
-    },
-    {
-      icon: "⚖️",
-      title: "Chore Court",
-      description:
-        "Vote on disputed chores in a democratic process to ensure fairness.",
-    },
-    {
-      icon: "🔔",
-      title: "Weekly Digest",
-      description:
-        "Receive weekly summaries and statistics about your household's chore completion.",
-    },
-  ];
-
   return {
     features,
     steps,
-    comingSoonFeatures,
   };
 }

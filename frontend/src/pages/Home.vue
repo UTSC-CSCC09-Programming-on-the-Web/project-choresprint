@@ -106,28 +106,6 @@
       </div>
     </section>
 
-    <!-- Coming Soon Section -->
-    <section class="coming-soon-section">
-      <div class="container">
-        <h2 class="section-title">Coming Soon</h2>
-        <p class="section-subtitle">
-          We're working on exciting new features for future releases
-        </p>
-
-        <div class="coming-soon-grid">
-          <div
-            v-for="(feature, index) in sections.comingSoonFeatures"
-            :key="index"
-            class="coming-soon-card"
-          >
-            <div class="coming-soon-icon">{{ feature.icon }}</div>
-            <h3 class="coming-soon-title">{{ feature.title }}</h3>
-            <p class="coming-soon-description">{{ feature.description }}</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- CTA Section -->
     <section class="cta-section">
       <div class="container">
@@ -142,7 +120,7 @@
 
           <div v-if="!userStore.user" class="cta-button">
             <a :href="getGoogleAuthUrl()" class="btn btn-lg btn-primary"
-              >Get Started for Free</a
+              >Get Started</a
             >
           </div>
           <div v-else class="cta-button">
@@ -246,7 +224,7 @@ onMounted(async () => {
 
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: var(--spacing-xl);
 }
 

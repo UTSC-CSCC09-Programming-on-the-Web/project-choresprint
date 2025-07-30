@@ -1120,6 +1120,7 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
+    gap: var(--spacing-md);
   }
 
   .house-info-card,
@@ -1138,6 +1139,39 @@ onUnmounted(() => {
 
   .action-buttons {
     flex-direction: column;
+  }
+
+  /* --- Chore card mobile improvements --- */
+  .chore-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--spacing-md) var(--spacing-sm);
+    min-width: 0;
+    word-break: break-word;
+    gap: var(--spacing-sm);
+  }
+  .chore-status {
+    margin-right: 0;
+    margin-bottom: var(--spacing-xs);
+    align-self: flex-start;
+  }
+  .chore-content {
+    width: 100%;
+    min-width: 0;
+  }
+  .chore-actions {
+    margin-left: 0;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+  .completed-badge,
+  .failed-badge {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: var(--spacing-xs);
   }
 }
 </style>
